@@ -63,7 +63,7 @@
 
     #game-ui {
       width: 100%;
-      max-width: 600px;
+      max-width: 800px;
       margin-top: 5px;
       display: flex;
       flex-direction: column;
@@ -123,7 +123,6 @@
 
     #map-container {
       display: grid;
-      grid-template-columns: repeat(5, 50px);
       grid-gap: 4px;
       justify-content: center;
       background-color: #111;
@@ -175,6 +174,28 @@
 
     .goal-revealed {
       box-shadow: 0 0 15px yellow;
+    }
+
+    .firewall {
+      background-color: #333 !important;
+      border: 2px solid #f00 !important;
+      cursor: not-allowed;
+    }
+
+    .firewall:hover {
+      transform: none !important;
+    }
+
+    .data-node {
+      background-color: #00f !important;
+      color: white;
+      animation: pulse 2s infinite;
+    }
+
+    .teleport {
+      background-color: #9400d3 !important;
+      color: white;
+      animation: pulse 1s infinite;
     }
 
     #log {
@@ -436,6 +457,18 @@
       align-items: center;
     }
 
+    /* Pause Modal */
+    #pauseModal .modal-content {
+      max-width: 250px;
+    }
+
+    /* Life Icons */
+    .life-icon {
+      color: #f00;
+      font-size: 1.2em;
+      margin: 0 2px;
+    }
+
     /* Animations */
     @keyframes pulse {
       0% { transform: scale(1); }
@@ -473,9 +506,6 @@
 
     /* Responsive adjustments */
     @media (max-width: 500px) {
-      #map-container {
-        grid-template-columns: repeat(5, 40px);
-      }
       .tile {
         width: 40px;
         height: 40px;
@@ -512,6 +542,7 @@
         <button onclick="plantDecoyData()"><span>🧭</span> Plant Decoy</button>
         <button onclick="enterDarkWebMarket()"><span>🛒</span> Dark Web Market</button>
         <button onclick="openUpgradeMenu()"><span>🔧</span> Upgrade Tools</button>
+        <button onclick="togglePause()"><span>⏸️</span> Pause Game</button>
       </div>
     </div>
 
@@ -556,17 +587,28 @@
     </div>
   </div>
 
+  <!-- Pause Modal -->
+  <div id="pauseModal" class="modal">
+    <div class="modal-content">
+      <div style="font-size:1.3em; margin-bottom:10px;">⏸️ Game Paused</div>
+      <button onclick="togglePause()">Resume Game</button>
+      <button onclick="resetGame()">Restart Level</button>
+      <button onclick="returnToMainMenu()">Main Menu</button>
+    </div>
+  </div>
+
   <script>
     // Game State Management
     const gameState = {
       currentRole: null,
-      mapSize: 5,
+      mapSize: 5, // Starting size (will increase with levels)
       hiderPosition: { x: 0, y: 0 },
       seekerPositions: [],
       goalPosition: { x: 2, y: 2 },
       score: 0,
       level: 1,
       coins: 0,
+      lives: 3,
       inventory: [],
       activeEffects: [],
       cloakingAvailable: true,
@@ -574,7 +616,13 @@
       torTrailActive: false,
       aiMoveInterval: null,
       timers: {},
-      gameActive: false
+      gameActive: false,
+      isPaused: false,
+      specialTiles: {
+        firewalls: [],
+        dataNodes: [],
+        teleports: []
+      }
     };
 
     // Tool Stats
@@ -661,6 +709,13 @@
         desc: "5 seconds of invisibility with 15s cooldown.", 
         cost: 10, 
         action: useVPN 
+      },
+      { 
+        name: "Extra Life", 
+        icon: "❤️", 
+        desc: "Get an additional life.", 
+        cost: 20, 
+        action: addLife 
       }
     ];
 
@@ -687,15 +742,92 @@
       updateScoreDisplay(0);
       updateLevelDisplay(1);
       updateCoinsDisplay(0);
+      updateLivesDisplay(3);
       initShop();
       
       // Add keyboard event listeners
       document.addEventListener('keydown', handleKeyPress);
     }
 
+    // Generate special tiles for the map
+    function generateSpecialTiles() {
+      gameState.specialTiles = {
+        firewalls: [],
+        dataNodes: [],
+        teleports: []
+      };
+
+      const mapArea = gameState.mapSize * gameState.mapSize;
+      
+      // Generate firewalls (10-20% of map)
+      const firewallCount = Math.floor(mapArea * (0.1 + Math.random() * 0.1));
+      for (let i = 0; i < firewallCount; i++) {
+        let x, y;
+        do {
+          x = Math.floor(Math.random() * gameState.mapSize);
+          y = Math.floor(Math.random() * gameState.mapSize);
+        } while (
+          (x === gameState.hiderPosition.x && y === gameState.hiderPosition.y) ||
+          (x === gameState.goalPosition.x && y === gameState.goalPosition.y) ||
+          gameState.specialTiles.firewalls.some(t => t.x === x && t.y === y)
+        );
+        gameState.specialTiles.firewalls.push({ x, y });
+      }
+
+      // Generate data nodes (5-10% of map)
+      const dataNodeCount = Math.floor(mapArea * (0.05 + Math.random() * 0.05));
+      for (let i = 0; i < dataNodeCount; i++) {
+        let x, y;
+        do {
+          x = Math.floor(Math.random() * gameState.mapSize);
+          y = Math.floor(Math.random() * gameState.mapSize);
+        } while (
+          (x === gameState.hiderPosition.x && y === gameState.hiderPosition.y) ||
+          (x === gameState.goalPosition.x && y === gameState.goalPosition.y) ||
+          gameState.specialTiles.dataNodes.some(t => t.x === x && t.y === y) ||
+          gameState.specialTiles.firewalls.some(t => t.x === x && t.y === y)
+        );
+        gameState.specialTiles.dataNodes.push({ x, y });
+      }
+
+      // Generate teleport pairs (1-3 pairs)
+      const teleportPairCount = 1 + Math.floor(Math.random() * 2);
+      for (let i = 0; i < teleportPairCount; i++) {
+        // First teleport pad
+        let x1, y1;
+        do {
+          x1 = Math.floor(Math.random() * gameState.mapSize);
+          y1 = Math.floor(Math.random() * gameState.mapSize);
+        } while (
+          (x1 === gameState.hiderPosition.x && y1 === gameState.hiderPosition.y) ||
+          (x1 === gameState.goalPosition.x && y1 === gameState.goalPosition.y) ||
+          gameState.specialTiles.teleports.some(t => t.x === x1 && t.y === y1) ||
+          gameState.specialTiles.firewalls.some(t => t.x === x1 && t.y === y1)
+        );
+
+        // Second teleport pad
+        let x2, y2;
+        do {
+          x2 = Math.floor(Math.random() * gameState.mapSize);
+          y2 = Math.floor(Math.random() * gameState.mapSize);
+        } while (
+          (x2 === gameState.hiderPosition.x && y2 === gameState.hiderPosition.y) ||
+          (x2 === gameState.goalPosition.x && y2 === gameState.goalPosition.y) ||
+          (x2 === x1 && y2 === y1) ||
+          gameState.specialTiles.teleports.some(t => t.x === x2 && t.y === y2) ||
+          gameState.specialTiles.firewalls.some(t => t.x === x2 && t.y === y2)
+        );
+
+        gameState.specialTiles.teleports.push(
+          { x: x1, y: y1, pair: i },
+          { x: x2, y: y2, pair: i }
+        );
+      }
+    }
+
     // Handle keyboard input
     function handleKeyPress(e) {
-      if (!gameState.gameActive) return;
+      if (!gameState.gameActive || gameState.isPaused) return;
       
       const { x, y } = gameState.hiderPosition;
       
@@ -724,13 +856,58 @@
         case 'u':
           openUpgradeMenu();
           break;
+        case 'p':
+          togglePause();
+          break;
+        case 'Escape':
+          togglePause();
+          break;
       }
+    }
+
+    // Toggle pause state
+    function togglePause() {
+      gameState.isPaused = !gameState.isPaused;
+      
+      if (gameState.isPaused) {
+        clearInterval(gameState.aiMoveInterval);
+        document.getElementById("pauseModal").style.display = "flex";
+        logAction("⏸️ Game paused");
+      } else {
+        // Restart AI movement with current speed
+        const baseSpeed = 1000;
+        const speedReduction = Math.min(gameState.level * 50, 600);
+        const aiSpeed = Math.max(400, baseSpeed - speedReduction);
+        gameState.aiMoveInterval = setInterval(moveSeekerAI, aiSpeed);
+        document.getElementById("pauseModal").style.display = "none";
+        logAction("▶️ Game resumed");
+      }
+    }
+
+    // Return to main menu
+    function returnToMainMenu() {
+      closeModals();
+      gameState.gameActive = false;
+      clearInterval(gameState.aiMoveInterval);
+      document.getElementById("game-ui").style.display = "none";
+      document.getElementById("main-menu").style.display = "flex";
+      gameState.isPaused = false;
+    }
+
+    // Add extra life
+    function addLife() {
+      gameState.lives++;
+      updateLivesDisplay(gameState.lives);
+      logAction("❤️ Gained an extra life!");
     }
 
     // Start the game with selected role
     function startGame(role) {
       gameState.currentRole = role;
       gameState.gameActive = true;
+      gameState.lives = 3;
+      gameState.level = 1;
+      gameState.mapSize = 5; // Reset to starting size
       document.getElementById("main-menu").style.display = "none";
       document.getElementById("game-ui").style.display = "flex";
 
@@ -747,7 +924,8 @@
       const items = [
         { icon: "🎯 Score: 0", tooltip: "Your current score", id: "scoreDisplay" },
         { icon: "🔓 Lv: 1", tooltip: "Current game level", id: "levelDisplay" },
-        { icon: "🪙 Coins: 0", tooltip: "Coins you've earned", id: "coinDisplay" }
+        { icon: "🪙 Coins: 0", tooltip: "Coins you've earned", id: "coinDisplay" },
+        { icon: "❤️ Lives: 3", tooltip: "Remaining lives", id: "livesDisplay" }
       ];
 
       items.forEach(item => {
@@ -786,8 +964,22 @@
       }
     }
 
+    // Update lives display
+    function updateLivesDisplay(lives) {
+      gameState.lives = lives;
+      const livesDisplay = document.getElementById("livesDisplay");
+      if (livesDisplay) {
+        let hearts = '';
+        for (let i = 0; i < lives; i++) {
+          hearts += '❤️';
+        }
+        livesDisplay.innerHTML = `❤️ Lives: ${hearts}<span class="tooltip">Remaining lives</span>`;
+      }
+    }
+
     // Open upgrade menu
     function openUpgradeMenu() {
+      if (gameState.isPaused) return;
       const modal = document.getElementById("upgradeModal");
       modal.style.display = "flex";
       const list = document.getElementById("upgrade-list");
@@ -891,12 +1083,18 @@
 
       gameState.coins -= item.cost;
       updateCoinsDisplay(gameState.coins);
-      addToInventory(item.name, item.desc, item.action, item.icon);
+      if (item.action) {
+        addToInventory(item.name, item.desc, item.action, item.icon);
+      } else {
+        // Directly apply effect if no action specified (like extra life)
+        item.action();
+      }
       logAction(`🛍️ Bought: ${item.name}`);
     }
 
     // Use USB adapter
     function useUSBAdapter() {
+      if (gameState.isPaused) return;
       logAction("🔌 Bootable USB used! Goal revealed.");
       const goalTile = document.querySelector(".goal");
       if (goalTile) goalTile.classList.add("goal-revealed");
@@ -908,6 +1106,7 @@
 
     // Use Tor Trail
     function useTorTrail() {
+      if (gameState.isPaused) return;
       if (gameState.torTrailActive) {
         logAction("⚠️ Tor Trail is already active.");
         return;
@@ -926,6 +1125,7 @@
 
     // Use CC Cleaner
     function useCCCleanser() {
+      if (gameState.isPaused) return;
       logAction("🧯 CC Cleaner used! Seekers confused.");
       const newX = Math.floor(Math.random() * gameState.mapSize);
       const newY = Math.floor(Math.random() * gameState.mapSize);
@@ -935,6 +1135,7 @@
 
     // Use VPN
     function useVPN() {
+      if (gameState.isPaused) return;
       if (!gameState.cloakingAvailable) {
         logAction("⚠️ VPN is on cooldown.");
         return;
@@ -953,6 +1154,7 @@
 
     // Enter Dark Web Market
     function enterDarkWebMarket() {
+      if (gameState.isPaused) return;
       logAction("🛒 Dark Web Market opened.");
       const items = [
         { name: "Corruption Evidence", icon: "📄", action: useUSBAdapter },
@@ -966,13 +1168,42 @@
 
     // Move player to new position
     function movePlayer(x, y) {
-      if (gameState.currentRole !== "hider" || !gameState.gameActive) return;
+      if (gameState.currentRole !== "hider" || !gameState.gameActive || gameState.isPaused) return;
+
+      // Check if target position is a firewall
+      const isFirewall = gameState.specialTiles.firewalls.some(t => t.x === x && t.y === y);
+      if (isFirewall) {
+        logAction("🚧 Firewall blocked your path!");
+        return;
+      }
 
       const dx = Math.abs(x - gameState.hiderPosition.x);
       const dy = Math.abs(y - gameState.hiderPosition.y);
 
       if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1) || (gameState.torTrailActive && dx === 1 && dy === 1)) {
         gameState.hiderPosition = { x, y };
+        
+        // Check for data node collection
+        const dataNodeIndex = gameState.specialTiles.dataNodes.findIndex(t => t.x === x && t.y === y);
+        if (dataNodeIndex !== -1) {
+          gameState.coins += 5;
+          updateCoinsDisplay(gameState.coins);
+          gameState.specialTiles.dataNodes.splice(dataNodeIndex, 1);
+          logAction("💾 Collected data node (+5 coins)");
+        }
+        
+        // Check for teleport pad
+        const teleport = gameState.specialTiles.teleports.find(t => t.x === x && t.y === y);
+        if (teleport) {
+          const destination = gameState.specialTiles.teleports.find(
+            t => t.pair === teleport.pair && (t.x !== x || t.y !== y)
+          );
+          if (destination) {
+            gameState.hiderPosition = { x: destination.x, y: destination.y };
+            logAction("🌀 Teleported to another pad!");
+          }
+        }
+        
         checkWin();
         createMap();
       } else {
@@ -982,7 +1213,7 @@
 
     // Move AI seekers
     function moveSeekerAI() {
-      if (!gameState.cloakingAvailable || !gameState.gameActive) return;
+      if (!gameState.cloakingAvailable || !gameState.gameActive || gameState.isPaused) return;
 
       gameState.seekerPositions.forEach(seeker => {
         let dx = seeker.x - gameState.hiderPosition.x;
@@ -1013,9 +1244,14 @@
 
     // Reset game state for new level
     function resetGame() {
+      closeModals(); // Close any open modals first
       clearInterval(gameState.aiMoveInterval);
       gameState.hiderPosition = { x: 0, y: 0 };
       gameState.gameActive = true;
+      gameState.isPaused = false;
+      
+      // Increase map size every 3 levels (max 7x7)
+      gameState.mapSize = Math.min(7, 5 + Math.floor(gameState.level / 3));
       
       // Generate random goal position
       do {
@@ -1027,6 +1263,9 @@
         (gameState.goalPosition.x === gameState.hiderPosition.x && 
          gameState.goalPosition.y === gameState.hiderPosition.y)
       );
+
+      // Generate special tiles
+      generateSpecialTiles();
 
       // Set seekers based on level - progressive difficulty
       const baseEnemyCount = 1;
@@ -1041,7 +1280,8 @@
           y = Math.floor(Math.random() * gameState.mapSize);
         } while (
           (x === gameState.hiderPosition.x && y === gameState.hiderPosition.y) ||
-          (x === gameState.goalPosition.x && y === gameState.goalPosition.y)
+          (x === gameState.goalPosition.x && y === gameState.goalPosition.y) ||
+          gameState.specialTiles.firewalls.some(t => t.x === x && t.y === y)
         );
         gameState.seekerPositions.push({ x, y });
       }
@@ -1056,19 +1296,32 @@
       const aiSpeed = Math.max(400, baseSpeed - speedReduction);
       
       gameState.aiMoveInterval = setInterval(moveSeekerAI, aiSpeed);
-      logAction(`🚀 Level ${gameState.level}: ${enemyCount} enemies at speed ${aiSpeed}ms`);
+      logAction(`🚀 Level ${gameState.level} (${gameState.mapSize}x${gameState.mapSize}): ${enemyCount} enemies at speed ${aiSpeed}ms`);
       createMap();
     }
 
     // Create the game map
     function createMap() {
       mapContainer.innerHTML = '';
+      // Update grid template based on current map size
+      mapContainer.style.gridTemplateColumns = `repeat(${gameState.mapSize}, 50px)`;
+      
       for (let y = 0; y < gameState.mapSize; y++) {
         for (let x = 0; x < gameState.mapSize; x++) {
           const tile = document.createElement("div");
           tile.className = "tile";
           
-          if (x === gameState.hiderPosition.x && y === gameState.hiderPosition.y) {
+          // Check for special tiles first
+          if (gameState.specialTiles.firewalls.some(t => t.x === x && t.y === y)) {
+            tile.classList.add("firewall");
+            tile.textContent = "🚧";
+          } else if (gameState.specialTiles.dataNodes.some(t => t.x === x && t.y === y)) {
+            tile.classList.add("data-node");
+            tile.textContent = "💾";
+          } else if (gameState.specialTiles.teleports.some(t => t.x === x && t.y === y)) {
+            tile.classList.add("teleport");
+            tile.textContent = "🌀";
+          } else if (x === gameState.hiderPosition.x && y === gameState.hiderPosition.y) {
             tile.classList.add("hider");
             tile.textContent = "🧍";
           } else if (x === gameState.goalPosition.x && y === gameState.goalPosition.y) {
@@ -1110,7 +1363,7 @@
 
     // Check if player was caught
     function checkCaught() {
-      if (!gameState.cloakingAvailable || !gameState.gameActive) return;
+      if (!gameState.cloakingAvailable || !gameState.gameActive || gameState.isPaused) return;
 
       gameState.seekerPositions.forEach(seeker => {
         if (seeker.x === gameState.hiderPosition.x && seeker.y === gameState.hiderPosition.y) {
@@ -1122,12 +1375,21 @@
           
           logAction(`🚨 Caught by ${caughtBy} using ${method}`);
           
-          // Stop the game immediately
-          gameState.gameActive = false;
-          clearInterval(gameState.aiMoveInterval);
+          // Decrease lives
+          gameState.lives--;
+          updateLivesDisplay(gameState.lives);
           
-          // Show lose modal
-          showLoseModal();
+          if (gameState.lives > 0) {
+            // If still have lives, reset position
+            logAction(`❤️ ${gameState.lives} lives remaining!`);
+            gameState.hiderPosition = { x: 0, y: 0 };
+            createMap();
+          } else {
+            // No lives left - game over
+            gameState.gameActive = false;
+            clearInterval(gameState.aiMoveInterval);
+            showLoseModal();
+          }
         }
       });
     }
@@ -1147,6 +1409,7 @@
       document.getElementById("winModal").style.display = "none";
       document.getElementById("loseModal").style.display = "none";
       document.getElementById("upgradeModal").style.display = "none";
+      document.getElementById("pauseModal").style.display = "none";
     }
 
     // Log game actions
@@ -1159,7 +1422,7 @@
 
     // Use cloaking ability
     function useCloaking() {
-      if (!gameState.cloakingAvailable || !gameState.gameActive) {
+      if (!gameState.cloakingAvailable || !gameState.gameActive || gameState.isPaused) {
         logAction("⚠️ Cloaking is on cooldown.");
         return;
       }
@@ -1176,7 +1439,7 @@
 
     // Plant decoy data
     function plantDecoyData() {
-      if (gameState.decoyPlanted || !gameState.gameActive) {
+      if (gameState.decoyPlanted || !gameState.gameActive || gameState.isPaused) {
         logAction("🛑 Decoy is on cooldown.");
         return;
       }
