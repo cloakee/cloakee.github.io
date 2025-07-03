@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cloaker Game</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: 'Courier New', Courier, monospace;
+      background-color: #000;
+      color: #0f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 5px;
+      overflow: hidden;
+      font-size: 14px;
+    }
+
+    header {
+      width: 100%;
+      text-align: center;
+      padding: 0.5em;
+      background: black;
+      color: #0f0;
+      font-size: 1.5em;
+      border-bottom: 2px solid #0f0;
+      box-shadow: 0 0 10px #0f0;
+    }
+
+    #main-menu {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.95);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    #main-menu button {
+      padding: 10px 20px;
+      font-size: 1em;
+      background-color: #222;
+      color: #0f0;
+      border: 2px solid #0f0;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    #main-menu button:hover {
+      background-color: #0f0;
+      color: black;
+      transform: scale(1.05);
+    }
+
+    #game-ui {
+      width: 100%;
+      max-width: 600px;
+      margin-top: 5px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .tool-bar {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      flex-wrap: nowrap;
+      background-color: #111;
+      border: 1px solid #222;
+      border-radius: 8px;
+      padding: 5px;
+      width: 100%;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+
+    .stat-item {
+      flex: 0 0 auto;
+      min-width: 70px;
+      max-width: 100px;
+      text-align: center;
+      font-size: 14px;
+      padding: 6px;
+      border: 2px solid #0f0;
+      border-radius: 6px;
+      position: relative;
+    }
+
+    .tooltip {
+      visibility: hidden;
+      width: 160px;
+      background: #222;
+      color: #fff;
+      text-align: center;
+      border-radius: 4px;
+      padding: 5px;
+      position: absolute;
+      z-index: 1;
+      bottom: 125%;
+      left: 50%;
+      margin-left: -80px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      font-size: 0.8em;
+      white-space: nowrap;
+    }
+
+    .stat-item:hover .tooltip {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    #map-container {
+      display: grid;
+      grid-template-columns: repeat(5, 50px);
+      grid-gap: 4px;
+      justify-content: center;
+      background-color: #111;
+      padding: 8px;
+      border: 2px dashed #0f0;
+      border-radius: 8px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .tile {
+      width: 50px;
+      height: 50px;
+      background-color: #222;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: bold;
+      color: white;
+      border: 1px solid #444;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 20px;
+      position: relative;
+    }
+
+    .tile:hover {
+      background-color: #333;
+      transform: scale(1.05);
+    }
+
+    .hider {
+      background-color: #0ff !important;
+      color: black;
+      animation: pulse 1.5s infinite;
+    }
+
+    .seeker {
+      background-color: #f00 !important;
+      color: black;
+      animation: shake 0.5s infinite;
+    }
+
+    .goal {
+      background-color: orange !important;
+      color: black;
+      animation: glow 2s infinite;
+    }
+
+    .goal-revealed {
+      box-shadow: 0 0 15px yellow;
+    }
+
+    #log {
+      width: 100%;
+      max-width: 100%;
+      background-color: #000;
+      color: #0f0;
+      padding: 6px;
+      border: 1px solid #0f0;
+      border-radius: 5px;
+      font-size: 0.8em;
+      white-space: pre-line;
+      height: 40px;
+      overflow-y: auto;
+      text-align: center;
+    }
+
+    #inventory {
+      width: 100%;
+      max-width: 600px;
+      margin-top: 5px;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .inventory-item {
+      flex: 1 1 auto;
+      min-width: 100px;
+      text-align: center;
+      padding: 8px;
+      border: 2px solid #0f0;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .inventory-item:hover {
+      background-color: #0f0;
+      color: black;
+      transform: scale(1.05);
+    }
+
+    .inventory-icon {
+      font-size: 1.5em;
+      margin-bottom: 5px;
+    }
+
+    .tooltip-inv {
+      visibility: hidden;
+      width: 160px;
+      background: #222;
+      color: #fff;
+      text-align: center;
+      border-radius: 4px;
+      padding: 5px;
+      position: absolute;
+      z-index: 1;
+      bottom: 125%;
+      left: 50%;
+      margin-left: -80px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      font-size: 0.8em;
+      white-space: nowrap;
+    }
+
+    .inventory-item:hover .tooltip-inv {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    #shop {
+      width: 100%;
+      max-width: 600px;
+      margin-top: 5px;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .shop-item {
+      flex: 1 1 auto;
+      min-width: 100px;
+      text-align: center;
+      padding: 8px;
+      border: 2px solid #0f0;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .shop-item:hover {
+      background-color: #0f0;
+      color: black;
+      transform: scale(1.05);
+    }
+
+    .shop-icon {
+      font-size: 1.5em;
+      margin-bottom: 5px;
+    }
+
+    .dropdown {
+      position: relative;
+      display: inline-block;
+      margin: 10px;
+    }
+
+    .dropbtn {
+      background-color: #222;
+      color: #0f0;
+      padding: 8px 12px;
+      border: 2px solid #0f0;
+      cursor: pointer;
+      font-size: 14px;
+      border-radius: 6px;
+      width: 100%;
+      transition: all 0.2s;
+    }
+
+    .dropbtn:hover {
+      background-color: #0f0;
+      color: black;
+    }
+
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: #111;
+      min-width: 160px;
+      box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+      z-index: 1;
+      border: 1px solid #0f0;
+      border-radius: 6px;
+      padding: 10px;
+    }
+
+    .dropdown-content button {
+      color: #0f0;
+      padding: 10px;
+      display: block;
+      width: 100%;
+      background: transparent;
+      border: none;
+      text-align: left;
+      cursor: pointer;
+      font-size: 14px;
+      margin: 4px 0;
+      transition: all 0.2s;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dropdown-content button:hover {
+      background-color: #0f0;
+      color: black;
+    }
+
+    .dropdown:hover .dropdown-content {
+      display: block;
+    }
+
+    .cooldown {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: #0f0;
+      transform-origin: left;
+      transform: scaleX(0);
+      transition: transform linear;
+    }
+
+    footer {
+      margin-top: auto;
+      font-size: 0.8em;
+      color: gray;
+      margin-top: 5px;
+    }
+
+    /* Modals */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.95);
+      justify-content: center;
+      align-items: center;
+      z-index: 1001;
+    }
+
+    .modal-content {
+      background: #111;
+      padding: 15px;
+      border: 2px solid #0f0;
+      border-radius: 8px;
+      text-align: center;
+      color: #0f0;
+      font-size: 1em;
+      max-width: 300px;
+    }
+
+    .modal button {
+      background: #0f0;
+      color: black;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 5px;
+      font-size: 1em;
+      margin-top: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .modal button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 10px #0f0;
+    }
+
+    /* Upgrade Modal */
+    #upgradeModal .modal-content {
+      max-width: 300px;
+    }
+
+    .upgrade-item {
+      text-align: left;
+      margin: 10px 0;
+      padding: 8px;
+      border-bottom: 1px solid #333;
+    }
+
+    .upgrade-item span {
+      display: block;
+      font-size: 0.9em;
+      color: #ccc;
+      margin-top: 4px;
+    }
+
+    .upgrade-item button {
+      margin-top: 8px;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Animations */
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes shake {
+      0% { transform: translateX(0); }
+      25% { transform: translateX(-2px); }
+      75% { transform: translateX(2px); }
+      100% { transform: translateX(0); }
+    }
+
+    @keyframes glow {
+      0% { box-shadow: 0 0 5px orange; }
+      50% { box-shadow: 0 0 20px orange; }
+      100% { box-shadow: 0 0 5px orange; }
+    }
+
+    /* Active effect indicators */
+    .active-effect {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      padding: 5px 10px;
+      background: #111;
+      border: 1px solid #0f0;
+      border-radius: 4px;
+      font-size: 0.9em;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 500px) {
+      #map-container {
+        grid-template-columns: repeat(5, 40px);
+      }
+      .tile {
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
+      }
+      .inventory-item, .shop-item {
+        min-width: 80px;
+        font-size: 12px;
+      }
+    }
+  </style>
+</head>
+
+<body onload="initGame()">
+
+  <!-- Main Menu -->
+  <div id="main-menu">
+    <div style="font-size: 1.5em;">Cloaker Game</div>
+    <button onclick="startGame('hider')">🧍 Play as Hider</button>
+    <button onclick="startGame('seeker')" disabled>👁️ Coming Soon</button>
+    <div style="margin-top: 10px; font-size: 0.9em; color: gray;">Single-player only for now.</div>
+  </div>
+
+  <header>Cloaker Game</header>
+
+  <div id="game-ui" style="display: none;">
+    <div class="tool-bar" id="tool-bar"></div>
+
+    <!-- Dropdown Tool Menu -->
+    <div class="dropdown">
+      <button class="dropbtn">🛠️ Tools</button>
+      <div class="dropdown-content">
+        <button onclick="useCloaking()"><span>🕶️</span> Cloaking</button>
+        <button onclick="plantDecoyData()"><span>🧭</span> Plant Decoy</button>
+        <button onclick="enterDarkWebMarket()"><span>🛒</span> Dark Web Market</button>
+        <button onclick="openUpgradeMenu()"><span>🔧</span> Upgrade Tools</button>
+      </div>
+    </div>
+
+    <div id="map-container"></div>
+    <div id="log"></div>
+    <div id="shop"></div>
+    <div id="inventory"></div>
+  </div>
+
+  <footer>
+    Cloaker Game &copy; 2025 | Created with pure HTML, CSS, and JavaScript
+  </footer>
+
+  <!-- Modals -->
+  <div id="winModal" class="modal">
+    <div class="modal-content">
+      🔓 Level Complete!
+      <br>
+      <span id="coinsEarned">+10 coins earned</span>
+      <br><br>
+      <button onclick="closeModals()">Continue</button>
+    </div>
+  </div>
+
+  <div id="loseModal" class="modal">
+    <div class="modal-content">
+      🚨 You were caught by <span id="caughtByEnemy">...</span> using:
+      <br><br>
+      <strong id="detectionMethod">...</strong>
+      <br><br>
+      <button onclick="resetGame()">Try Again</button>
+    </div>
+  </div>
+
+  <!-- Upgrade Modal -->
+  <div id="upgradeModal" class="modal">
+    <div class="modal-content">
+      <div style="font-size:1.3em; margin-bottom:10px;">🔧 Upgrade Tools</div>
+      <div id="upgrade-list"></div>
+      <br>
+      <button onclick="closeUpgradeMenu()">Close</button>
+    </div>
+  </div>
+
+  <script>
+    // Game State Management
+    const gameState = {
+      currentRole: null,
+      mapSize: 5,
+      hiderPosition: { x: 0, y: 0 },
+      seekerPositions: [],
+      goalPosition: { x: 2, y: 2 },
+      score: 0,
+      level: 1,
+      coins: 0,
+      inventory: [],
+      activeEffects: [],
+      cloakingAvailable: true,
+      decoyPlanted: false,
+      torTrailActive: false,
+      aiMoveInterval: null,
+      timers: {},
+      gameActive: false
+    };
+
+    // Tool Stats
+    const toolStats = {
+      cloaking: { 
+        name: "Cloaking", 
+        icon: "🕶️", 
+        desc: "Make yourself invisible to enemies.", 
+        level: 1, 
+        duration: 10, 
+        costBase: 10, 
+        costInc: 5,
+        cooldown: 20
+      },
+      decoy: { 
+        name: "Decoy", 
+        icon: "🧭", 
+        desc: "Plant fake data to confuse enemies.", 
+        level: 1, 
+        duration: 15, 
+        costBase: 10, 
+        costInc: 5,
+        cooldown: 25
+      },
+      torTrail: { 
+        name: "Tor Trail", 
+        icon: "🌀", 
+        desc: "Allows diagonal movement for a short time.", 
+        level: 1, 
+        moves: 1, 
+        costBase: 10, 
+        costInc: 5,
+        duration: 10,
+        cooldown: 30
+      },
+      vpn: { 
+        name: "VPN", 
+        icon: "🛡️", 
+        desc: "Short-term invisibility with reduced cooldown.", 
+        level: 1, 
+        duration: 5, 
+        costBase: 10, 
+        costInc: 5,
+        cooldown: 15
+      },
+      ccCleaner: { 
+        name: "CC Cleaner", 
+        icon: "🧯", 
+        desc: "Randomly teleports all enemies.", 
+        level: 1, 
+        power: 1, 
+        costBase: 10, 
+        costInc: 5,
+        cooldown: 20
+      }
+    };
+
+    // Shop Items
+    const shopItems = [
+      { 
+        name: "Bootable USB", 
+        icon: "🔌", 
+        desc: "Reveals the goal location for 3 seconds.", 
+        cost: 10, 
+        action: useUSBAdapter 
+      },
+      { 
+        name: "Tor Trail", 
+        icon: "🌀", 
+        desc: "Allows diagonal movement for 10 seconds.", 
+        cost: 10, 
+        action: useTorTrail 
+      },
+      { 
+        name: "CC Cleaner", 
+        icon: "🧯", 
+        desc: "Randomly teleports all enemies.", 
+        cost: 10, 
+        action: useCCCleanser 
+      },
+      { 
+        name: "VPN", 
+        icon: "🛡️", 
+        desc: "5 seconds of invisibility with 15s cooldown.", 
+        cost: 10, 
+        action: useVPN 
+      }
+    ];
+
+    // Enemies and detection methods
+    const enemyList = [
+      "Chainalys", "Elliptic", "Cypher Trace", "Nansen", "Arkam Intelligence",
+      "AnchainAI", "BlockSeer", "Blockchair", "Breadcrumbs", "Whale Alert",
+      "PeckShield", "The Graph", "Dune Analytics", "Glassnode"
+    ];
+
+    const detectionMethods = [
+      "Cluster Analysis – Links addresses to real identities.",
+      "Transaction Graph Tracking – Follows funds across wallets.",
+      "Heuristics – Identifies mixers and darknet activity.",
+      "Exchange & KYC Leaks – Correlates leaks with blockchain."
+    ];
+
+    // DOM Elements
+    const mapContainer = document.getElementById("map-container");
+    const logBox = document.getElementById("log");
+
+    // Initialize the game
+    function initGame() {
+      updateScoreDisplay(0);
+      updateLevelDisplay(1);
+      updateCoinsDisplay(0);
+      initShop();
+      
+      // Add keyboard event listeners
+      document.addEventListener('keydown', handleKeyPress);
+    }
+
+    // Handle keyboard input
+    function handleKeyPress(e) {
+      if (!gameState.gameActive) return;
+      
+      const { x, y } = gameState.hiderPosition;
+      
+      switch(e.key) {
+        case 'ArrowUp':
+          if (y > 0) movePlayer(x, y - 1);
+          break;
+        case 'ArrowDown':
+          if (y < gameState.mapSize - 1) movePlayer(x, y + 1);
+          break;
+        case 'ArrowLeft':
+          if (x > 0) movePlayer(x - 1, y);
+          break;
+        case 'ArrowRight':
+          if (x < gameState.mapSize - 1) movePlayer(x + 1, y);
+          break;
+        case ' ':
+          useCloaking();
+          break;
+        case 'd':
+          plantDecoyData();
+          break;
+        case 'm':
+          enterDarkWebMarket();
+          break;
+        case 'u':
+          openUpgradeMenu();
+          break;
+      }
+    }
+
+    // Start the game with selected role
+    function startGame(role) {
+      gameState.currentRole = role;
+      gameState.gameActive = true;
+      document.getElementById("main-menu").style.display = "none";
+      document.getElementById("game-ui").style.display = "flex";
+
+      initToolBar();
+      resetGame();
+      initInventory();
+    }
+
+    // Initialize the toolbar with stats
+    function initToolBar() {
+      const container = document.getElementById("tool-bar");
+      container.innerHTML = '';
+
+      const items = [
+        { icon: "🎯 Score: 0", tooltip: "Your current score", id: "scoreDisplay" },
+        { icon: "🔓 Lv: 1", tooltip: "Current game level", id: "levelDisplay" },
+        { icon: "🪙 Coins: 0", tooltip: "Coins you've earned", id: "coinDisplay" }
+      ];
+
+      items.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "stat-item";
+        div.innerHTML = item.icon + `<span class="tooltip">${item.tooltip}</span>`;
+        if (item.id) div.id = item.id;
+        container.appendChild(div);
+      });
+    }
+
+    // Update score display
+    function updateScoreDisplay(newScore) {
+      gameState.score = newScore;
+      const scoreDisplay = document.getElementById("scoreDisplay");
+      if (scoreDisplay) {
+        scoreDisplay.innerHTML = `🎯 Score: ${newScore}<span class="tooltip">Your current score</span>`;
+      }
+    }
+
+    // Update level display
+    function updateLevelDisplay(newLevel) {
+      gameState.level = newLevel;
+      const levelDisplay = document.getElementById("levelDisplay");
+      if (levelDisplay) {
+        levelDisplay.innerHTML = `🔓 Lv: ${newLevel}<span class="tooltip">Current game level</span>`;
+      }
+    }
+
+    // Update coins display
+    function updateCoinsDisplay(amount) {
+      gameState.coins = amount;
+      const coinDisplay = document.getElementById("coinDisplay");
+      if (coinDisplay) {
+        coinDisplay.innerHTML = `🪙 Coins: ${amount}<span class="tooltip">Coins you've earned</span>`;
+      }
+    }
+
+    // Open upgrade menu
+    function openUpgradeMenu() {
+      const modal = document.getElementById("upgradeModal");
+      modal.style.display = "flex";
+      const list = document.getElementById("upgrade-list");
+      list.innerHTML = '';
+
+      Object.values(toolStats).forEach(tool => {
+        const div = document.createElement("div");
+        div.className = "upgrade-item";
+        div.innerHTML = `
+          <strong>${tool.icon} ${tool.name} (Lvl ${tool.level})</strong>
+          <span>${tool.desc}</span>
+          <button onclick="upgradeTool('${tool.name}')">
+            <span>Upgrade</span>
+            <span>${getUpgradeCost(tool)}🪙</span>
+          </button>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    // Calculate upgrade cost
+    function getUpgradeCost(tool) {
+      return tool.costBase + (tool.level - 1) * tool.costInc;
+    }
+
+    // Upgrade a tool
+    function upgradeTool(toolName) {
+      const tool = Object.values(toolStats).find(t => t.name === toolName);
+      const cost = getUpgradeCost(tool);
+
+      if (gameState.coins >= cost) {
+        gameState.coins -= cost;
+        tool.level++;
+        if (tool.duration) tool.duration += 2;
+        if (tool.moves) tool.moves += 1;
+        updateCoinsDisplay(gameState.coins);
+        logAction(`📈 Upgraded ${tool.name} to Lvl ${tool.level}`);
+        openUpgradeMenu(); // Refresh modal
+      } else {
+        logAction(`🪙 Need ${cost} coins to upgrade ${tool.name}.`);
+      }
+    }
+
+    // Close upgrade menu
+    function closeUpgradeMenu() {
+      document.getElementById("upgradeModal").style.display = "none";
+    }
+
+    // Initialize inventory
+    function initInventory() {
+      const inv = document.getElementById("inventory");
+      inv.innerHTML = `
+        <div class="inventory-item">
+          <div class="inventory-icon">🎒</div>
+          <div>Inventory</div>
+          <div id="inv-list" style="margin-top:5px;"></div>
+        </div>
+      `;
+    }
+
+    // Add item to inventory
+    function addToInventory(itemName, description, useFunction, icon = "❓") {
+      const invList = document.getElementById("inv-list");
+      const item = document.createElement("div");
+      item.className = "inventory-item";
+      item.innerHTML = `
+        <div class="inventory-icon">${icon}</div>
+        <div>${itemName}</div>
+        <span class="tooltip-inv">${description}</span>
+      `;
+      item.onclick = useFunction;
+      invList.appendChild(item);
+      gameState.inventory.push({ name: itemName, description, useFunction, icon });
+    }
+
+    // Initialize shop
+    function initShop() {
+      const shop = document.getElementById("shop");
+      shop.innerHTML = "";
+
+      shopItems.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "shop-item";
+        div.innerHTML = `
+          <div class="shop-icon">${item.icon}</div>
+          <div>${item.name}</div>
+          <div>${item.cost}🪙</div>
+          <span class="tooltip-inv">${item.desc}</span>
+        `;
+        div.onclick = () => buyItem(item);
+        shop.appendChild(div);
+      });
+    }
+
+    // Buy item from shop
+    function buyItem(item) {
+      if (gameState.coins < item.cost) {
+        logAction(`🪙 Not enough coins to buy ${item.name}`);
+        return;
+      }
+
+      gameState.coins -= item.cost;
+      updateCoinsDisplay(gameState.coins);
+      addToInventory(item.name, item.desc, item.action, item.icon);
+      logAction(`🛍️ Bought: ${item.name}`);
+    }
+
+    // Use USB adapter
+    function useUSBAdapter() {
+      logAction("🔌 Bootable USB used! Goal revealed.");
+      const goalTile = document.querySelector(".goal");
+      if (goalTile) goalTile.classList.add("goal-revealed");
+      setTimeout(() => {
+        const goalTile = document.querySelector(".goal");
+        if (goalTile) goalTile.classList.remove("goal-revealed");
+      }, 3000);
+    }
+
+    // Use Tor Trail
+    function useTorTrail() {
+      if (gameState.torTrailActive) {
+        logAction("⚠️ Tor Trail is already active.");
+        return;
+      }
+
+      logAction("🌀 Tor Trail active! Diagonal move unlocked.");
+      gameState.torTrailActive = true;
+      startCooldown('torTrail', toolStats.torTrail.cooldown);
+      addActiveEffect('🌀 Tor Trail', toolStats.torTrail.duration);
+
+      setTimeout(() => {
+        gameState.torTrailActive = false;
+        logAction("🌀 Tor Trail expired.");
+      }, toolStats.torTrail.duration * 1000);
+    }
+
+    // Use CC Cleaner
+    function useCCCleanser() {
+      logAction("🧯 CC Cleaner used! Seekers confused.");
+      const newX = Math.floor(Math.random() * gameState.mapSize);
+      const newY = Math.floor(Math.random() * gameState.mapSize);
+      gameState.seekerPositions = [{ x: newX, y: newY }];
+      createMap();
+    }
+
+    // Use VPN
+    function useVPN() {
+      if (!gameState.cloakingAvailable) {
+        logAction("⚠️ VPN is on cooldown.");
+        return;
+      }
+
+      logAction("🛡️ VPN activated! Short-term invisibility.");
+      gameState.cloakingAvailable = false;
+      startCooldown('vpn', toolStats.vpn.cooldown);
+      addActiveEffect('🛡️ VPN', toolStats.vpn.duration);
+
+      setTimeout(() => {
+        gameState.cloakingAvailable = true;
+        logAction("🛡️ VPN expired.");
+      }, toolStats.vpn.duration * 1000);
+    }
+
+    // Enter Dark Web Market
+    function enterDarkWebMarket() {
+      logAction("🛒 Dark Web Market opened.");
+      const items = [
+        { name: "Corruption Evidence", icon: "📄", action: useUSBAdapter },
+        { name: "Security Bypass Key", icon: "🔑", action: useTorTrail },
+        { name: "Anonymous Identity", icon: "👤", action: useCCCleanser }
+      ];
+      const choice = items[Math.floor(Math.random() * items.length)];
+      logAction(`🎁 Obtained: ${choice.name}`);
+      addToInventory(choice.name, "One-time use item", choice.action, choice.icon);
+    }
+
+    // Move player to new position
+    function movePlayer(x, y) {
+      if (gameState.currentRole !== "hider" || !gameState.gameActive) return;
+
+      const dx = Math.abs(x - gameState.hiderPosition.x);
+      const dy = Math.abs(y - gameState.hiderPosition.y);
+
+      if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1) || (gameState.torTrailActive && dx === 1 && dy === 1)) {
+        gameState.hiderPosition = { x, y };
+        checkWin();
+        createMap();
+      } else {
+        logAction("⚠️ Can't move there.");
+      }
+    }
+
+    // Move AI seekers
+    function moveSeekerAI() {
+      if (!gameState.cloakingAvailable || !gameState.gameActive) return;
+
+      gameState.seekerPositions.forEach(seeker => {
+        let dx = seeker.x - gameState.hiderPosition.x;
+        let dy = seeker.y - gameState.hiderPosition.y;
+
+        // Smarter AI movement based on level
+        if (Math.random() < 0.1 + gameState.level * 0.02) {
+          // Random move to make less predictable
+          seeker.x += Math.random() < 0.5 ? -1 : 1;
+          seeker.y += Math.random() < 0.5 ? -1 : 1;
+        } else {
+          // Normal chase behavior
+          if (Math.abs(dx) > Math.abs(dy)) {
+            seeker.x -= Math.sign(dx);
+          } else {
+            seeker.y -= Math.sign(dy);
+          }
+        }
+
+        // Keep within bounds
+        seeker.x = Math.max(0, Math.min(gameState.mapSize - 1, seeker.x));
+        seeker.y = Math.max(0, Math.min(gameState.mapSize - 1, seeker.y));
+      });
+
+      checkCaught();
+      createMap();
+    }
+
+    // Reset game state for new level
+    function resetGame() {
+      clearInterval(gameState.aiMoveInterval);
+      gameState.hiderPosition = { x: 0, y: 0 };
+      gameState.gameActive = true;
+      
+      // Generate random goal position
+      do {
+        gameState.goalPosition = {
+          x: Math.floor(Math.random() * gameState.mapSize),
+          y: Math.floor(Math.random() * gameState.mapSize)
+        };
+      } while (
+        (gameState.goalPosition.x === gameState.hiderPosition.x && 
+         gameState.goalPosition.y === gameState.hiderPosition.y)
+      );
+
+      // Set seekers based on level - progressive difficulty
+      const baseEnemyCount = 1;
+      const additionalEnemies = Math.min(Math.floor(gameState.level / 2), 3);
+      const enemyCount = baseEnemyCount + additionalEnemies;
+      
+      gameState.seekerPositions = [];
+      for (let i = 0; i < enemyCount; i++) {
+        let x, y;
+        do {
+          x = Math.floor(Math.random() * gameState.mapSize);
+          y = Math.floor(Math.random() * gameState.mapSize);
+        } while (
+          (x === gameState.hiderPosition.x && y === gameState.hiderPosition.y) ||
+          (x === gameState.goalPosition.x && y === gameState.goalPosition.y)
+        );
+        gameState.seekerPositions.push({ x, y });
+      }
+
+      gameState.cloakingAvailable = true;
+      gameState.decoyPlanted = false;
+      gameState.torTrailActive = false;
+
+      // Adjust AI speed based on level - gets faster but not too fast
+      const baseSpeed = 1000;
+      const speedReduction = Math.min(gameState.level * 50, 600);
+      const aiSpeed = Math.max(400, baseSpeed - speedReduction);
+      
+      gameState.aiMoveInterval = setInterval(moveSeekerAI, aiSpeed);
+      logAction(`🚀 Level ${gameState.level}: ${enemyCount} enemies at speed ${aiSpeed}ms`);
+      createMap();
+    }
+
+    // Create the game map
+    function createMap() {
+      mapContainer.innerHTML = '';
+      for (let y = 0; y < gameState.mapSize; y++) {
+        for (let x = 0; x < gameState.mapSize; x++) {
+          const tile = document.createElement("div");
+          tile.className = "tile";
+          
+          if (x === gameState.hiderPosition.x && y === gameState.hiderPosition.y) {
+            tile.classList.add("hider");
+            tile.textContent = "🧍";
+          } else if (x === gameState.goalPosition.x && y === gameState.goalPosition.y) {
+            tile.classList.add("goal");
+            tile.textContent = "🔓";
+          } else {
+            gameState.seekerPositions.forEach(seeker => {
+              if (seeker.x === x && seeker.y === y) {
+                tile.classList.add("seeker");
+                tile.textContent = "👁️";
+              }
+            });
+          }
+          
+          tile.addEventListener("click", () => movePlayer(x, y));
+          mapContainer.appendChild(tile);
+        }
+      }
+    }
+
+    // Check if player reached the goal
+    function checkWin() {
+      if (gameState.hiderPosition.x === gameState.goalPosition.x && 
+          gameState.hiderPosition.y === gameState.goalPosition.y) {
+        const coinsEarned = 10 + Math.floor(gameState.level / 2);
+        logAction(`🔓 Goal reached! Earned ${coinsEarned} coins.`);
+        gameState.score += 10;
+        gameState.coins += coinsEarned;
+        gameState.level += 1;
+        
+        document.getElementById("coinsEarned").textContent = `+${coinsEarned} coins earned`;
+        updateScoreDisplay(gameState.score);
+        updateLevelDisplay(gameState.level);
+        updateCoinsDisplay(gameState.coins);
+        showWinModal();
+        setTimeout(resetGame, 1000);
+      }
+    }
+
+    // Check if player was caught
+    function checkCaught() {
+      if (!gameState.cloakingAvailable || !gameState.gameActive) return;
+
+      gameState.seekerPositions.forEach(seeker => {
+        if (seeker.x === gameState.hiderPosition.x && seeker.y === gameState.hiderPosition.y) {
+          const caughtBy = enemyList[Math.floor(Math.random() * enemyList.length)];
+          const method = detectionMethods[Math.floor(Math.random() * detectionMethods.length)];
+
+          document.getElementById("caughtByEnemy").innerText = caughtBy;
+          document.getElementById("detectionMethod").innerText = method;
+          
+          logAction(`🚨 Caught by ${caughtBy} using ${method}`);
+          
+          // Stop the game immediately
+          gameState.gameActive = false;
+          clearInterval(gameState.aiMoveInterval);
+          
+          // Show lose modal
+          showLoseModal();
+        }
+      });
+    }
+
+    // Show win modal
+    function showWinModal() {
+      document.getElementById("winModal").style.display = "flex";
+    }
+
+    // Show lose modal
+    function showLoseModal() {
+      document.getElementById("loseModal").style.display = "flex";
+    }
+
+    // Close all modals
+    function closeModals() {
+      document.getElementById("winModal").style.display = "none";
+      document.getElementById("loseModal").style.display = "none";
+      document.getElementById("upgradeModal").style.display = "none";
+    }
+
+    // Log game actions
+    function logAction(message) {
+      const lines = logBox.innerText.split("\n");
+      lines.unshift(message);
+      if (lines.length > 2) lines.pop();
+      logBox.innerText = lines.join("\n");
+    }
+
+    // Use cloaking ability
+    function useCloaking() {
+      if (!gameState.cloakingAvailable || !gameState.gameActive) {
+        logAction("⚠️ Cloaking is on cooldown.");
+        return;
+      }
+      logAction("🕶️ Cloaking activated!");
+      gameState.cloakingAvailable = false;
+      startCooldown('cloaking', toolStats.cloaking.cooldown);
+      addActiveEffect('🕶️ Cloaking', toolStats.cloaking.duration);
+
+      setTimeout(() => {
+        gameState.cloakingAvailable = true;
+        logAction("🕶️ Cloaking expired.");
+      }, toolStats.cloaking.duration * 1000);
+    }
+
+    // Plant decoy data
+    function plantDecoyData() {
+      if (gameState.decoyPlanted || !gameState.gameActive) {
+        logAction("🛑 Decoy is on cooldown.");
+        return;
+      }
+      logAction("📡 Decoy planted! Confusing AI.");
+      gameState.decoyPlanted = true;
+      startCooldown('decoy', toolStats.decoy.cooldown);
+      addActiveEffect('📡 Decoy', toolStats.decoy.duration);
+
+      // Move all seekers to random positions
+      gameState.seekerPositions = gameState.seekerPositions.map(() => ({
+        x: Math.floor(Math.random() * gameState.mapSize),
+        y: Math.floor(Math.random() * gameState.mapSize)
+      }));
+      createMap();
+
+      setTimeout(() => {
+        gameState.decoyPlanted = false;
+        logAction("📡 Decoy expired.");
+      }, toolStats.decoy.duration * 1000);
+    }
+
+    // Start cooldown timer for an ability
+    function startCooldown(ability, duration) {
+      const button = Array.from(document.querySelectorAll('.dropdown-content button'))
+        .find(btn => btn.textContent.includes(toolStats[ability].icon));
+      
+      if (button) {
+        const cooldownElement = document.createElement('div');
+        cooldownElement.className = 'cooldown';
+        button.appendChild(cooldownElement);
+        
+        // Animate cooldown
+        cooldownElement.style.transition = `transform ${duration}s linear`;
+        setTimeout(() => {
+          cooldownElement.style.transform = 'scaleX(1)';
+        }, 10);
+        
+        // Remove after cooldown
+        setTimeout(() => {
+          if (button.contains(cooldownElement)) {
+            button.removeChild(cooldownElement);
+          }
+        }, duration * 1000);
+      }
+    }
+
+    // Add active effect indicator
+    function addActiveEffect(name, duration) {
+      const effectElement = document.createElement('div');
+      effectElement.className = 'active-effect';
+      effectElement.innerHTML = `${name} <span id="effect-time">${duration}s</span>`;
+      document.body.appendChild(effectElement);
+      
+      let timeLeft = duration;
+      const timer = setInterval(() => {
+        timeLeft--;
+        const timeElement = effectElement.querySelector('#effect-time');
+        if (timeElement) timeElement.textContent = `${timeLeft}s`;
+        
+        if (timeLeft <= 0) {
+          clearInterval(timer);
+          if (effectElement.parentNode) {
+            effectElement.parentNode.removeChild(effectElement);
+          }
+        }
+      }, 1000);
+      
+      setTimeout(() => {
+        if (effectElement.parentNode) {
+          effectElement.parentNode.removeChild(effectElement);
+        }
+        clearInterval(timer);
+      }, duration * 1000);
+    }
+  </script>
+</body>
+</html>
