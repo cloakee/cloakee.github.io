@@ -1,0 +1,560 @@
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: 'Courier New', Courier, monospace;
+  background-color: #000;
+  color: #0f0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 5px;
+  overflow: hidden;
+  font-size: 14px;
+}
+
+header {
+  width: 100%;
+  text-align: center;
+  padding: 0.5em;
+  background: black;
+  color: #0f0;
+  font-size: 1.5em;
+  border-bottom: 2px solid #0f0;
+  box-shadow: 0 0 10px #0f0;
+}
+
+#main-menu {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.95);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  flex-direction: column;
+  gap: 20px;
+}
+
+#main-menu button {
+  padding: 10px 20px;
+  font-size: 1em;
+  background-color: #222;
+  color: #0f0;
+  border: 2px solid #0f0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+#main-menu button:hover {
+  background-color: #0f0;
+  color: black;
+  transform: scale(1.05);
+}
+
+#game-ui {
+  width: 100%;
+  max-width: 800px;
+  margin-top: 5px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.tool-bar {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  flex-wrap: nowrap;
+  background-color: #111;
+  border: 1px solid #222;
+  border-radius: 8px;
+  padding: 5px;
+  width: 100%;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.stat-item {
+  flex: 0 0 auto;
+  min-width: 70px;
+  max-width: 100px;
+  text-align: center;
+  font-size: 14px;
+  padding: 6px;
+  border: 2px solid #0f0;
+  border-radius: 6px;
+  position: relative;
+}
+
+.tooltip {
+  visibility: hidden;
+  width: 160px;
+  background: #222;
+  color: #fff;
+  text-align: center;
+  border-radius: 4px;
+  padding: 5px;
+  position: absolute;
+  z-index: 1;
+  bottom: 125%;
+  left: 50%;
+  margin-left: -80px;
+  opacity: 0;
+  transition: opacity 0.3s;
+  font-size: 0.8em;
+  white-space: nowrap;
+}
+
+.stat-item:hover .tooltip {
+  visibility: visible;
+  opacity: 1;
+}
+
+#game-area {
+  display: flex;
+  width: 100%;
+  gap: 10px;
+}
+
+#map-container {
+  display: grid;
+  grid-gap: 4px;
+  justify-content: center;
+  background-color: #111;
+  padding: 8px;
+  border: 2px dashed #0f0;
+  border-radius: 8px;
+  flex-grow: 1;
+  box-sizing: border-box;
+}
+
+#inventory-panel {
+  width: 150px;
+  background-color: #111;
+  padding: 8px;
+  border: 2px dashed #0f0;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+#inventory-panel h3 {
+  margin: 0 0 10px 0;
+  text-align: center;
+  color: #0f0;
+  border-bottom: 1px solid #0f0;
+  padding-bottom: 5px;
+}
+
+.tile {
+  width: 50px;
+  height: 50px;
+  background-color: #222;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  color: white;
+  border: 1px solid #444;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 20px;
+  position: relative;
+}
+
+.tile:hover {
+  background-color: #333;
+  transform: scale(1.05);
+}
+
+.hider {
+  background-color: #0ff !important;
+  color: black;
+  animation: pulse 1.5s infinite;
+}
+
+.seeker {
+  background-color: #f00 !important;
+  color: black;
+  animation: shake 0.5s infinite;
+}
+
+.goal {
+  background-color: orange !important;
+  color: black;
+  animation: glow 2s infinite;
+}
+
+.goal-revealed {
+  box-shadow: 0 0 15px yellow;
+}
+
+.firewall {
+  background-color: #333 !important;
+  border: 2px solid #f00 !important;
+  cursor: not-allowed;
+}
+
+.firewall:hover {
+  transform: none !important;
+}
+
+.data-node {
+  background-color: #00f !important;
+  color: white;
+  animation: pulse 2s infinite;
+}
+
+.teleport {
+  background-color: #9400d3 !important;
+  color: white;
+  animation: pulse 1s infinite;
+}
+
+#log {
+  width: 100%;
+  max-width: 100%;
+  background-color: #000;
+  color: #0f0;
+  padding: 6px;
+  border: 1px solid #0f0;
+  border-radius: 5px;
+  font-size: 0.8em;
+  white-space: pre-line;
+  height: 40px;
+  overflow-y: auto;
+  text-align: center;
+}
+
+#shop {
+  width: 100%;
+  max-width: 600px;
+  margin-top: 5px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.inventory-item {
+  flex: 1 1 auto;
+  min-width: 100px;
+  text-align: center;
+  padding: 8px;
+  border: 2px solid #0f0;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.inventory-item:hover {
+  background-color: #0f0;
+  color: black;
+  transform: scale(1.05);
+}
+
+.inventory-icon {
+  font-size: 1.5em;
+  margin-bottom: 5px;
+}
+
+.tooltip-inv {
+  visibility: hidden;
+  width: 160px;
+  background: #222;
+  color: #fff;
+  text-align: center;
+  border-radius: 4px;
+  padding: 5px;
+  position: absolute;
+  z-index: 1;
+  bottom: 125%;
+  left: 50%;
+  margin-left: -80px;
+  opacity: 0;
+  transition: opacity 0.3s;
+  font-size: 0.8em;
+  white-space: nowrap;
+}
+
+.inventory-item:hover .tooltip-inv {
+  visibility: visible;
+  opacity: 1;
+}
+
+.shop-item {
+  flex: 1 1 auto;
+  min-width: 100px;
+  text-align: center;
+  padding: 8px;
+  border: 2px solid #0f0;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.shop-item:hover {
+  background-color: #0f0;
+  color: black;
+  transform: scale(1.05);
+}
+
+.shop-icon {
+  font-size: 1.5em;
+  margin-bottom: 5px;
+}
+
+.dropdown {
+  position: relative;
+  display: inline-block;
+  margin: 10px;
+}
+
+.dropbtn {
+  background-color: #222;
+  color: #0f0;
+  padding: 8px 12px;
+  border: 2px solid #0f0;
+  cursor: pointer;
+  font-size: 14px;
+  border-radius: 6px;
+  width: 100%;
+  transition: all 0.2s;
+}
+
+.dropbtn:hover {
+  background-color: #0f0;
+  color: black;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: #111;
+  min-width: 160px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 1;
+  border: 1px solid #0f0;
+  border-radius: 6px;
+  padding: 10px;
+}
+
+.dropdown-content button {
+  color: #0f0;
+  padding: 10px;
+  display: block;
+  width: 100%;
+  background: transparent;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: 14px;
+  margin: 4px 0;
+  transition: all 0.2s;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dropdown-content button:hover {
+  background-color: #0f0;
+  color: black;
+}
+
+.dropdown:hover .dropdown-content {
+  display: block;
+}
+
+.cooldown {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: #0f0;
+  transform-origin: left;
+  transform: scaleX(0);
+  transition: transform linear;
+}
+
+footer {
+  margin-top: auto;
+  font-size: 0.8em;
+  color: gray;
+  margin-top: 5px;
+}
+
+/* Modals */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.95);
+  justify-content: center;
+  align-items: center;
+  z-index: 1001;
+}
+
+.modal-content {
+  background: #111;
+  padding: 15px;
+  border: 2px solid #0f0;
+  border-radius: 8px;
+  text-align: center;
+  color: #0f0;
+  font-size: 1em;
+  max-width: 300px;
+}
+
+.modal button {
+  background: #0f0;
+  color: black;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 5px;
+  font-size: 1em;
+  margin-top: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.modal button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 10px #0f0;
+}
+
+/* Upgrade Modal */
+#upgradeModal .modal-content {
+  max-width: 300px;
+}
+
+.upgrade-item {
+  text-align: left;
+  margin: 10px 0;
+  padding: 8px;
+  border-bottom: 1px solid #333;
+}
+
+.upgrade-item span {
+  display: block;
+  font-size: 0.9em;
+  color: #ccc;
+  margin-top: 4px;
+}
+
+.upgrade-item button {
+  margin-top: 8px;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Pause Modal */
+#pauseModal .modal-content {
+  max-width: 250px;
+}
+
+/* Life Icons */
+.life-icon {
+  color: #f00;
+  font-size: 1.2em;
+  margin: 0 2px;
+}
+
+/* Animations */
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+@keyframes shake {
+  0% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
+  100% { transform: translateX(0); }
+}
+
+@keyframes glow {
+  0% { box-shadow: 0 0 5px orange; }
+  50% { box-shadow: 0 0 20px orange; }
+  100% { box-shadow: 0 0 5px orange; }
+}
+
+/* Active effect indicators */
+.active-effect {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  padding: 5px 10px;
+  background: #111;
+  border: 1px solid #0f0;
+  border-radius: 4px;
+  font-size: 0.9em;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Tool menu container */
+.tool-menu-container {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+/* Pause button */
+#pauseBtn {
+  background-color: #222;
+  color: #0f0;
+  padding: 8px 12px;
+  border: 2px solid #0f0;
+  cursor: pointer;
+  font-size: 14px;
+  border-radius: 6px;
+  transition: all 0.2s;
+  height: 40px;
+}
+
+#pauseBtn:hover {
+  background-color: #0f0;
+  color: black;
+}
+
+/* Responsive adjustments */
+@media (max-width: 500px) {
+  .tile {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+  }
+  .inventory-item, .shop-item {
+    min-width: 80px;
+    font-size: 12px;
+  }
+  #game-area {
+    flex-direction: column;
+  }
+  #inventory-panel {
+    width: 100%;
+    margin-top: 10px;
+  }
+}

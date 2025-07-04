@@ -1,0 +1,12 @@
+/cloaker-game
+  ├── index.html
+  ├── styles.css
+  ├── game.js
+  └── sounds/
+      ├── move.wav
+      ├── coin.wav
+      ├── win.wav
+      ├── lose.wav
+      ├── powerup.wav
+      ├── teleport.wav
+      └── click.wav
