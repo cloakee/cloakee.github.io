@@ -13,6 +13,7 @@
     <button onclick="startGame('hider')">🧍 Play as Hider</button>
     <button onclick="startGame('seeker')" disabled>👁️ Coming Soon</button>
     <div style="margin-top: 10px; font-size: 0.9em; color: gray;">Single-player only for now.</div>
+    <button id="musicToggle">🔊 Music ON</button>
   </div>
 
   <header>Cloaker Game</header>
@@ -74,7 +75,7 @@
       <br><br>
       <button onclick="newGame()">🔄 New Game</button>
       <button onclick="returnToMainMenu()">🏠 Main Menu</button>
-      <button onclick="buyLifeInGameOver()">❤️ Buy Life (20🪙)</button>
+      <button onclick="buyLifeInGameOver()">❤️ Buy Life (30🪙)</button>
     </div>
   </div>
 
@@ -106,6 +107,11 @@
   <audio id="powerupSound" src="sounds/powerup.wav" preload="auto"></audio>
   <audio id="teleportSound" src="sounds/teleport.wav" preload="auto"></audio>
   <audio id="clickSound" src="sounds/click.wav" preload="auto"></audio>
+  <audio id="cloakSound" src="sounds/cloak.wav" preload="auto"></audio>
+  <audio id="decoySound" src="sounds/decoy.wav" preload="auto"></audio>
+  <audio id="footstep1Sound" src="sounds/footstep1.wav" preload="auto"></audio>
+  <audio id="footstep2Sound" src="sounds/footstep2.wav" preload="auto"></audio>
+  <audio id="backgroundMusic" src="sounds/background.mp3" preload="auto"></audio>
 
   <script src="game.js"></script>
 </body>
