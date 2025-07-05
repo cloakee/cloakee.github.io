@@ -1,4 +1,7 @@
-* { box-sizing: border-box; }
+* { 
+  box-sizing: border-box;
+  cursor: url('cursors/default.cur'), auto;
+}
 
 body {
   margin: 0;
@@ -44,7 +47,7 @@ header {
   color: #0f0;
   border: 2px solid #0f0;
   border-radius: 8px;
-  cursor: pointer;
+  cursor: url('cursors/pointer.cur'), pointer;
   transition: all 0.2s;
 }
 
@@ -160,7 +163,7 @@ header {
   font-weight: bold;
   color: white;
   border: 1px solid #444;
-  cursor: pointer;
+  cursor: url('cursors/pointer.cur'), pointer;
   transition: all 0.2s;
   font-size: 20px;
   position: relative;
@@ -175,18 +178,21 @@ header {
   background-color: #0ff !important;
   color: black;
   animation: pulse 1.5s infinite;
+  z-index: 10;
 }
 
 .seeker {
   background-color: #f00 !important;
   color: black;
   animation: shake 0.5s infinite;
+  z-index: 5;
 }
 
 .goal {
   background-color: orange !important;
   color: black;
   animation: glow 2s infinite;
+  z-index: 5;
 }
 
 .goal-revealed {
@@ -196,7 +202,7 @@ header {
 .firewall {
   background-color: #333 !important;
   border: 2px solid #f00 !important;
-  cursor: not-allowed;
+  cursor: url('cursors/not-allowed.cur'), not-allowed;
 }
 
 .firewall:hover {
@@ -248,7 +254,7 @@ header {
   border: 2px solid #0f0;
   border-radius: 6px;
   font-size: 14px;
-  cursor: pointer;
+  cursor: url('cursors/pointer.cur'), pointer;
   position: relative;
   transition: all 0.2s;
   display: flex;
@@ -300,7 +306,7 @@ header {
   border: 2px solid #0f0;
   border-radius: 6px;
   font-size: 14px;
-  cursor: pointer;
+  cursor: url('cursors/pointer.cur'), pointer;
   transition: all 0.2s;
   display: flex;
   flex-direction: column;
@@ -329,7 +335,7 @@ header {
   color: #0f0;
   padding: 8px 12px;
   border: 2px solid #0f0;
-  cursor: pointer;
+  cursor: url('cursors/pointer.cur'), pointer;
   font-size: 14px;
   border-radius: 6px;
   width: 100%;
@@ -361,7 +367,7 @@ header {
   background: transparent;
   border: none;
   text-align: left;
-  cursor: pointer;
+  cursor: url('cursors/pointer.cur'), pointer;
   font-size: 14px;
   margin: 4px 0;
   transition: all 0.2s;
@@ -369,6 +375,7 @@ header {
   display: flex;
   align-items: center;
   gap: 8px;
+  position: relative;
 }
 
 .dropdown-content button:hover {
@@ -429,7 +436,7 @@ footer {
   border-radius: 5px;
   font-size: 1em;
   margin-top: 10px;
-  cursor: pointer;
+  cursor: url('cursors/pointer.cur'), pointer;
   transition: all 0.2s;
 }
 
@@ -527,7 +534,7 @@ footer {
   color: #0f0;
   padding: 8px 12px;
   border: 2px solid #0f0;
-  cursor: pointer;
+  cursor: url('cursors/pointer.cur'), pointer;
   font-size: 14px;
   border-radius: 6px;
   transition: all 0.2s;
@@ -537,6 +544,163 @@ footer {
 #pauseBtn:hover {
   background-color: #0f0;
   color: black;
+}
+
+/* Movement animations */
+.move-from {
+  animation: fadeOut 0.15s forwards;
+}
+
+.move-to {
+  animation: fadeIn 0.15s forwards;
+}
+
+@keyframes fadeOut {
+  to { opacity: 0.3; transform: scale(0.9); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0.3; transform: scale(1.1); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Visual effects */
+.particles {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  background: radial-gradient(circle, rgba(255,255,0,0.8) 0%, rgba(255,255,0,0) 70%);
+  animation: particles 3s infinite;
+}
+
+@keyframes particles {
+  0% { transform: scale(0.5); opacity: 0; }
+  50% { opacity: 0.8; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+
+.teleport-effect {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  background: radial-gradient(circle, rgba(148,0,211,0.8) 0%, rgba(148,0,211,0) 70%);
+  animation: teleportOut 1s forwards;
+}
+
+.teleport-arrive {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  background: radial-gradient(circle, rgba(148,0,211,0.8) 0%, rgba(148,0,211,0) 70%);
+  animation: teleportIn 1s forwards;
+}
+
+@keyframes teleportOut {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+
+@keyframes teleportIn {
+  0% { transform: scale(1.5); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.decoy-effect {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  background: radial-gradient(circle, rgba(255,0,0,0.5) 0%, rgba(255,0,0,0) 70%);
+  animation: decoyPulse 1s forwards;
+}
+
+@keyframes decoyPulse {
+  0% { transform: scale(0.5); opacity: 0; }
+  50% { opacity: 0.8; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+
+.collect-effect {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  background: radial-gradient(circle, rgba(0,0,255,0.8) 0%, rgba(0,0,255,0) 70%);
+  animation: collect 1s forwards;
+}
+
+@keyframes collect {
+  0% { transform: scale(0.5); opacity: 0; }
+  50% { opacity: 0.8; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+
+.win-effect {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  background: radial-gradient(circle, rgba(255,165,0,0.8) 0%, rgba(255,165,0,0) 70%);
+  animation: winCelebrate 2s forwards;
+}
+
+@keyframes winCelebrate {
+  0% { transform: scale(0.5); opacity: 0; }
+  20% { opacity: 0.8; }
+  40% { transform: scale(1.2); }
+  60% { opacity: 0.8; }
+  80% { transform: scale(1); }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+
+.caught-effect {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  background: radial-gradient(circle, rgba(255,0,0,0.8) 0%, rgba(255,0,0,0) 70%);
+  animation: caught 1s forwards;
+}
+
+@keyframes caught {
+  0% { transform: scale(0.5); opacity: 0; }
+  50% { opacity: 0.8; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+
+/* Special ability states */
+.cloaking-active {
+  background: linear-gradient(45deg, #0ff, #00f, #0ff) !important;
+  background-size: 200% 200% !important;
+  animation: cloakPulse 2s infinite !important;
+}
+
+@keyframes cloakPulse {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.tor-trail-active {
+  background: linear-gradient(45deg, #0ff, #9400d3, #0ff) !important;
+  background-size: 200% 200% !important;
+  animation: torTrailPulse 2s infinite !important;
+}
+
+@keyframes torTrailPulse {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 /* Responsive adjustments */
