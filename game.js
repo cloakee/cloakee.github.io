@@ -22,7 +22,9 @@ const gameState = {
     firewalls: [],
     dataNodes: [],
     teleports: []
-  }
+  },
+  musicEnabled: true,
+  lastStepTime: 0
 };
 
 // Audio Elements
@@ -33,7 +35,12 @@ const sounds = {
   lose: document.getElementById("loseSound"),
   powerup: document.getElementById("powerupSound"),
   teleport: document.getElementById("teleportSound"),
-  click: document.getElementById("clickSound")
+  click: document.getElementById("clickSound"),
+  cloak: document.getElementById("cloakSound"),
+  decoy: document.getElementById("decoySound"),
+  footstep1: document.getElementById("footstep1Sound"),
+  footstep2: document.getElementById("footstep2Sound"),
+  background: document.getElementById("backgroundMusic")
 };
 
 // Tool Stats
@@ -43,20 +50,20 @@ const toolStats = {
     icon: "🕶️", 
     desc: "Make yourself invisible to enemies.", 
     level: 1, 
-    duration: 10, 
-    costBase: 10, 
-    costInc: 5,
-    cooldown: 20
+    duration: 8, 
+    costBase: 15, 
+    costInc: 8,
+    cooldown: 25
   },
   decoy: { 
     name: "Decoy", 
     icon: "🧭", 
     desc: "Plant fake data to confuse enemies.", 
     level: 1, 
-    duration: 15, 
-    costBase: 10, 
-    costInc: 5,
-    cooldown: 25
+    duration: 12, 
+    costBase: 15, 
+    costInc: 8,
+    cooldown: 30
   },
   torTrail: { 
     name: "Tor Trail", 
@@ -64,20 +71,20 @@ const toolStats = {
     desc: "Allows diagonal movement for a short time.", 
     level: 1, 
     moves: 1, 
-    costBase: 10, 
-    costInc: 5,
-    duration: 10,
-    cooldown: 30
+    costBase: 20, 
+    costInc: 10,
+    duration: 8,
+    cooldown: 35
   },
   vpn: { 
     name: "VPN", 
     icon: "🛡️", 
     desc: "Short-term invisibility with reduced cooldown.", 
     level: 1, 
-    duration: 5, 
-    costBase: 10, 
-    costInc: 5,
-    cooldown: 15
+    duration: 6, 
+    costBase: 12, 
+    costInc: 6,
+    cooldown: 20
   },
   ccCleaner: { 
     name: "CC Cleaner", 
@@ -85,9 +92,9 @@ const toolStats = {
     desc: "Randomly teleports all enemies.", 
     level: 1, 
     power: 1, 
-    costBase: 10, 
-    costInc: 5,
-    cooldown: 20
+    costBase: 25, 
+    costInc: 12,
+    cooldown: 25
   }
 };
 
@@ -97,35 +104,35 @@ const shopItems = [
     name: "Bootable USB", 
     icon: "🔌", 
     desc: "Reveals the goal location for 3 seconds.", 
-    cost: 10, 
+    cost: 15, 
     action: useUSBAdapter 
   },
   { 
     name: "Tor Trail", 
     icon: "🌀", 
-    desc: "Allows diagonal movement for 10 seconds.", 
-    cost: 10, 
+    desc: "Allows diagonal movement for 8 seconds.", 
+    cost: 20, 
     action: useTorTrail 
   },
   { 
     name: "CC Cleaner", 
     icon: "🧯", 
     desc: "Randomly teleports all enemies.", 
-    cost: 10, 
+    cost: 25, 
     action: useCCCleanser 
   },
   { 
     name: "VPN", 
     icon: "🛡️", 
-    desc: "5 seconds of invisibility with 15s cooldown.", 
-    cost: 10, 
+    desc: "6 seconds of invisibility with 20s cooldown.", 
+    cost: 12, 
     action: useVPN 
   },
   { 
     name: "Extra Life", 
     icon: "❤️", 
     desc: "Get an additional life.", 
-    cost: 20, 
+    cost: 30, 
     action: addLife 
   }
 ];
@@ -149,10 +156,25 @@ const mapContainer = document.getElementById("map-container");
 const logBox = document.getElementById("log");
 
 // Play sound effect
-function playSound(soundName) {
+function playSound(soundName, volume = 0.7) {
   if (sounds[soundName]) {
+    sounds[soundName].volume = volume;
     sounds[soundName].currentTime = 0;
     sounds[soundName].play().catch(e => console.log("Audio play failed:", e));
+  }
+}
+
+// Toggle background music
+function toggleMusic() {
+  gameState.musicEnabled = !gameState.musicEnabled;
+  if (gameState.musicEnabled) {
+    sounds.background.loop = true;
+    sounds.background.volume = 0.3;
+    sounds.background.play();
+    document.getElementById("musicToggle").textContent = "🔊 Music ON";
+  } else {
+    sounds.background.pause();
+    document.getElementById("musicToggle").textContent = "🔇 Music OFF";
   }
 }
 
@@ -171,6 +193,14 @@ function initGame() {
   document.querySelectorAll('button').forEach(button => {
     button.addEventListener('click', () => playSound('click'));
   });
+
+  // Initialize music toggle
+  document.getElementById("musicToggle").addEventListener('click', toggleMusic);
+  if (gameState.musicEnabled) {
+    sounds.background.loop = true;
+    sounds.background.volume = 0.3;
+    sounds.background.play();
+  }
 }
 
 // Generate special tiles for the map
@@ -297,15 +327,22 @@ function togglePause() {
     clearInterval(gameState.aiMoveInterval);
     document.getElementById("pauseModal").style.display = "flex";
     logAction("⏸️ Game paused");
+    sounds.background.pause();
   } else {
     // Restart AI movement with current speed
-    const baseSpeed = 1000;
-    const speedReduction = Math.min(gameState.level * 50, 600);
-    const aiSpeed = Math.max(400, baseSpeed - speedReduction);
+    const aiSpeed = getSeekerSpeed();
     gameState.aiMoveInterval = setInterval(moveSeekerAI, aiSpeed);
     document.getElementById("pauseModal").style.display = "none";
     logAction("▶️ Game resumed");
+    if (gameState.musicEnabled) sounds.background.play();
   }
+}
+
+// Get seeker speed based on level
+function getSeekerSpeed() {
+  if (gameState.level <= 9) return 3000; // 3 seconds
+  if (gameState.level <= 30) return 2000; // 2 seconds
+  return 1000; // 1 second for levels 30+
 }
 
 // Return to main menu
@@ -316,6 +353,7 @@ function returnToMainMenu() {
   document.getElementById("game-ui").style.display = "none";
   document.getElementById("main-menu").style.display = "flex";
   gameState.isPaused = false;
+  sounds.background.pause();
 }
 
 // Start a completely new game
@@ -341,11 +379,12 @@ function newGame() {
   // Close modals and start fresh
   closeModals();
   resetGame();
+  if (gameState.musicEnabled) sounds.background.play();
 }
 
 // Buy life in game over modal
 function buyLifeInGameOver() {
-  const cost = 20;
+  const cost = 30;
   if (gameState.coins >= cost) {
     gameState.coins -= cost;
     gameState.lives++;
@@ -382,6 +421,7 @@ function startGame(role) {
   initToolBar();
   resetGame();
   initInventory();
+  if (gameState.musicEnabled) sounds.background.play();
 }
 
 // Initialize the toolbar with stats
@@ -563,9 +603,18 @@ function buyItem(item) {
 function useUSBAdapter() {
   if (gameState.isPaused) return;
   logAction("🔌 Bootable USB used! Goal revealed.");
-  playSound('powerup');
+  playSound('powerup', 0.5);
   const goalTile = document.querySelector(".goal");
-  if (goalTile) goalTile.classList.add("goal-revealed");
+  if (goalTile) {
+    goalTile.classList.add("goal-revealed");
+    // Add particle effect
+    const particles = document.createElement("div");
+    particles.className = "particles";
+    goalTile.appendChild(particles);
+    setTimeout(() => {
+      particles.remove();
+    }, 3000);
+  }
   setTimeout(() => {
     const goalTile = document.querySelector(".goal");
     if (goalTile) goalTile.classList.remove("goal-revealed");
@@ -582,10 +631,19 @@ function useTorTrail() {
   }
 
   logAction("🌀 Tor Trail active! Diagonal move unlocked.");
-  playSound('powerup');
+  playSound('powerup', 0.6);
   gameState.torTrailActive = true;
   startCooldown('torTrail', toolStats.torTrail.cooldown);
   addActiveEffect('🌀 Tor Trail', toolStats.torTrail.duration);
+
+  // Add visual effect to player
+  const playerTile = document.querySelector(".hider");
+  if (playerTile) {
+    playerTile.classList.add("tor-trail-active");
+    setTimeout(() => {
+      playerTile.classList.remove("tor-trail-active");
+    }, toolStats.torTrail.duration * 1000);
+  }
 
   setTimeout(() => {
     gameState.torTrailActive = false;
@@ -597,10 +655,20 @@ function useTorTrail() {
 function useCCCleanser() {
   if (gameState.isPaused) return;
   logAction("🧯 CC Cleaner used! Seekers confused.");
-  playSound('powerup');
+  playSound('powerup', 0.8);
   const newX = Math.floor(Math.random() * gameState.mapSize);
   const newY = Math.floor(Math.random() * gameState.mapSize);
   gameState.seekerPositions = [{ x: newX, y: newY }];
+  
+  // Add visual effect
+  const seekers = document.querySelectorAll(".seeker");
+  seekers.forEach(seeker => {
+    const effect = document.createElement("div");
+    effect.className = "teleport-effect";
+    seeker.appendChild(effect);
+    setTimeout(() => effect.remove(), 1000);
+  });
+  
   createMap();
 }
 
@@ -614,7 +682,7 @@ function useVPN() {
   }
 
   logAction("🛡️ VPN activated! Short-term invisibility.");
-  playSound('powerup');
+  playSound('powerup', 0.4);
   gameState.cloakingAvailable = false;
   startCooldown('vpn', toolStats.vpn.cooldown);
   addActiveEffect('🛡️ VPN', toolStats.vpn.duration);
@@ -629,7 +697,7 @@ function useVPN() {
 function enterDarkWebMarket() {
   if (gameState.isPaused) return;
   logAction("🛒 Dark Web Market opened.");
-  playSound('powerup');
+  playSound('powerup', 0.3);
   const items = [
     { name: "Corruption Evidence", icon: "📄", action: useUSBAdapter },
     { name: "Security Bypass Key", icon: "🔑", action: useTorTrail },
@@ -640,7 +708,7 @@ function enterDarkWebMarket() {
   addToInventory(choice.name, "One-time use item", choice.action, choice.icon);
 }
 
-// Move player to new position
+// Move player to new position with animation
 function movePlayer(x, y) {
   if (gameState.currentRole !== "hider" || !gameState.gameActive || gameState.isPaused) return;
 
@@ -656,38 +724,95 @@ function movePlayer(x, y) {
   const dy = Math.abs(y - gameState.hiderPosition.y);
 
   if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1) || (gameState.torTrailActive && dx === 1 && dy === 1)) {
-    gameState.hiderPosition = { x, y };
-    playSound('move');
-    
-    // Check for data node collection
-    const dataNodeIndex = gameState.specialTiles.dataNodes.findIndex(t => t.x === x && t.y === y);
-    if (dataNodeIndex !== -1) {
-      gameState.coins += 5;
-      updateCoinsDisplay(gameState.coins);
-      gameState.specialTiles.dataNodes.splice(dataNodeIndex, 1);
-      logAction("💾 Collected data node (+5 coins)");
-      playSound('coin');
+    // Play footstep sound with alternating steps
+    const now = Date.now();
+    if (now - gameState.lastStepTime > 200) { // Throttle footsteps
+      playSound(Math.random() > 0.5 ? 'footstep1' : 'footstep2', 0.3);
+      gameState.lastStepTime = now;
     }
+
+    // Animate movement
+    const oldTile = document.querySelector(`.tile[data-x="${gameState.hiderPosition.x}"][data-y="${gameState.hiderPosition.y}"]`);
+    const newTile = document.querySelector(`.tile[data-x="${x}"][data-y="${y}"]`);
     
-    // Check for teleport pad
-    const teleport = gameState.specialTiles.teleports.find(t => t.x === x && t.y === y);
-    if (teleport) {
-      const destination = gameState.specialTiles.teleports.find(
-        t => t.pair === teleport.pair && (t.x !== x || t.y !== y)
-      );
-      if (destination) {
-        gameState.hiderPosition = { x: destination.x, y: destination.y };
-        logAction("🌀 Teleported to another pad!");
-        playSound('teleport');
-      }
+    if (oldTile && newTile) {
+      oldTile.classList.remove("hider");
+      oldTile.classList.add("move-from");
+      newTile.classList.add("move-to");
+      
+      setTimeout(() => {
+        oldTile.classList.remove("move-from");
+        newTile.classList.remove("move-to");
+        gameState.hiderPosition = { x, y };
+        checkTileEffects(x, y);
+        createMap();
+      }, 150);
+    } else {
+      gameState.hiderPosition = { x, y };
+      checkTileEffects(x, y);
+      createMap();
     }
-    
-    checkWin();
-    createMap();
   } else {
     logAction("⚠️ Can't move there.");
     playSound('click');
   }
+}
+
+// Check for tile effects after movement
+function checkTileEffects(x, y) {
+  // Check for data node collection
+  const dataNodeIndex = gameState.specialTiles.dataNodes.findIndex(t => t.x === x && t.y === y);
+  if (dataNodeIndex !== -1) {
+    gameState.coins += 5;
+    updateCoinsDisplay(gameState.coins);
+    gameState.specialTiles.dataNodes.splice(dataNodeIndex, 1);
+    logAction("💾 Collected data node (+5 coins)");
+    playSound('coin');
+    
+    // Add collection effect
+    const tile = document.querySelector(`.tile[data-x="${x}"][data-y="${y}"]`);
+    if (tile) {
+      const effect = document.createElement("div");
+      effect.className = "collect-effect";
+      tile.appendChild(effect);
+      setTimeout(() => effect.remove(), 1000);
+    }
+  }
+  
+  // Check for teleport pad
+  const teleport = gameState.specialTiles.teleports.find(t => t.x === x && t.y === y);
+  if (teleport) {
+    const destination = gameState.specialTiles.teleports.find(
+      t => t.pair === teleport.pair && (t.x !== x || t.y !== y)
+    );
+    if (destination) {
+      // Add teleport effect
+      const tile = document.querySelector(`.tile[data-x="${x}"][data-y="${y}"]`);
+      if (tile) {
+        const effect = document.createElement("div");
+        effect.className = "teleport-effect";
+        tile.appendChild(effect);
+        setTimeout(() => effect.remove(), 1000);
+      }
+      
+      gameState.hiderPosition = { x: destination.x, y: destination.y };
+      logAction("🌀 Teleported to another pad!");
+      playSound('teleport');
+      
+      // Add arrival effect
+      setTimeout(() => {
+        const destTile = document.querySelector(`.tile[data-x="${destination.x}"][data-y="${destination.y}"]`);
+        if (destTile) {
+          const arriveEffect = document.createElement("div");
+          arriveEffect.className = "teleport-arrive";
+          destTile.appendChild(arriveEffect);
+          setTimeout(() => arriveEffect.remove(), 1000);
+        }
+      }, 150);
+    }
+  }
+  
+  checkWin();
 }
 
 // Move AI seekers - IMPROVED CHASING LOGIC
@@ -753,6 +878,11 @@ function moveSeekerAI() {
   createMap();
 }
 
+// Calculate minimum distance between two positions
+function calculateDistance(pos1, pos2) {
+  return Math.sqrt(Math.pow(pos1.x - pos2.x, 2) + Math.pow(pos1.y - pos2.y, 2));
+}
+
 // Reset game state for new level
 function resetGame() {
   closeModals(); // Close any open modals first
@@ -761,8 +891,8 @@ function resetGame() {
   gameState.gameActive = true;
   gameState.isPaused = false;
   
-  // Increase map size every 3 levels (max 7x7)
-  gameState.mapSize = Math.min(7, 5 + Math.floor(gameState.level / 3));
+  // Increase map size every 3 levels (max 9x9)
+  gameState.mapSize = Math.min(9, 5 + Math.floor(gameState.level / 3));
   
   // Generate random goal position
   do {
@@ -780,20 +910,34 @@ function resetGame() {
 
   // Set seekers based on level - progressive difficulty
   const baseEnemyCount = 1;
-  const additionalEnemies = Math.min(Math.floor(gameState.level / 2), 3);
+  const additionalEnemies = Math.min(Math.floor(gameState.level / 2), 4);
   const enemyCount = baseEnemyCount + additionalEnemies;
   
   gameState.seekerPositions = [];
   for (let i = 0; i < enemyCount; i++) {
     let x, y;
+    let attempts = 0;
+    const maxAttempts = 50;
+    
     do {
       x = Math.floor(Math.random() * gameState.mapSize);
       y = Math.floor(Math.random() * gameState.mapSize);
+      attempts++;
+      
+      // Ensure seekers don't spawn too close to hider (minimum 3 tiles away)
+      const distanceToHider = calculateDistance({x, y}, gameState.hiderPosition);
+      
+      if (attempts >= maxAttempts) {
+        // If we can't find a good position after many attempts, just place it anywhere
+        break;
+      }
     } while (
       (x === gameState.hiderPosition.x && y === gameState.hiderPosition.y) ||
       (x === gameState.goalPosition.x && y === gameState.goalPosition.y) ||
-      gameState.specialTiles.firewalls.some(t => t.x === x && t.y === y)
+      gameState.specialTiles.firewalls.some(t => t.x === x && t.y === y) ||
+      calculateDistance({x, y}, gameState.hiderPosition) < 3
     );
+    
     gameState.seekerPositions.push({ x, y });
   }
 
@@ -801,17 +945,15 @@ function resetGame() {
   gameState.decoyPlanted = false;
   gameState.torTrailActive = false;
 
-  // Adjust AI speed based on level - gets faster but not too fast
-  const baseSpeed = 1000;
-  const speedReduction = Math.min(gameState.level * 50, 600);
-  const aiSpeed = Math.max(400, baseSpeed - speedReduction);
+  // Adjust AI speed based on level
+  const aiSpeed = getSeekerSpeed();
   
   gameState.aiMoveInterval = setInterval(moveSeekerAI, aiSpeed);
   logAction(`🚀 Level ${gameState.level} (${gameState.mapSize}x${gameState.mapSize}): ${enemyCount} enemies at speed ${aiSpeed}ms`);
   createMap();
 }
 
-// Create the game map
+// Create the game map with animations
 function createMap() {
   mapContainer.innerHTML = '';
   // Update grid template based on current map size
@@ -821,6 +963,8 @@ function createMap() {
     for (let x = 0; x < gameState.mapSize; x++) {
       const tile = document.createElement("div");
       tile.className = "tile";
+      tile.dataset.x = x;
+      tile.dataset.y = y;
       
       // Check for special tiles first
       if (gameState.specialTiles.firewalls.some(t => t.x === x && t.y === y)) {
@@ -835,6 +979,9 @@ function createMap() {
       } else if (x === gameState.hiderPosition.x && y === gameState.hiderPosition.y) {
         tile.classList.add("hider");
         tile.textContent = "🧍";
+        if (gameState.torTrailActive) {
+          tile.classList.add("tor-trail-active");
+        }
       } else if (x === gameState.goalPosition.x && y === gameState.goalPosition.y) {
         tile.classList.add("goal");
         tile.textContent = "🔓";
@@ -869,6 +1016,16 @@ function checkWin() {
     updateLevelDisplay(gameState.level);
     updateCoinsDisplay(gameState.coins);
     showWinModal();
+    
+    // Add celebration effect
+    const goalTile = document.querySelector(".goal");
+    if (goalTile) {
+      const effect = document.createElement("div");
+      effect.className = "win-effect";
+      goalTile.appendChild(effect);
+      setTimeout(() => effect.remove(), 2000);
+    }
+    
     setTimeout(resetGame, 1000);
   }
 }
@@ -888,6 +1045,15 @@ function checkCaught() {
       logAction(`🚨 Caught by ${caughtBy} using ${method}`);
       playSound('lose');
       
+      // Add caught effect
+      const playerTile = document.querySelector(".hider");
+      if (playerTile) {
+        const effect = document.createElement("div");
+        effect.className = "caught-effect";
+        playerTile.appendChild(effect);
+        setTimeout(() => effect.remove(), 1000);
+      }
+      
       // Decrease lives
       gameState.lives--;
       updateLivesDisplay(gameState.lives);
@@ -896,6 +1062,31 @@ function checkCaught() {
         // If still have lives, reset position
         logAction(`❤️ ${gameState.lives} lives remaining!`);
         gameState.hiderPosition = { x: 0, y: 0 };
+        
+        // Reset seekers with minimum distance
+        gameState.seekerPositions = [];
+        const enemyCount = gameState.seekerPositions.length;
+        for (let i = 0; i < enemyCount; i++) {
+          let x, y;
+          let attempts = 0;
+          const maxAttempts = 50;
+          
+          do {
+            x = Math.floor(Math.random() * gameState.mapSize);
+            y = Math.floor(Math.random() * gameState.mapSize);
+            attempts++;
+            
+            if (attempts >= maxAttempts) break;
+          } while (
+            (x === gameState.hiderPosition.x && y === gameState.hiderPosition.y) ||
+            (x === gameState.goalPosition.x && y === gameState.goalPosition.y) ||
+            gameState.specialTiles.firewalls.some(t => t.x === x && t.y === y) ||
+            calculateDistance({x, y}, gameState.hiderPosition) < 3
+          );
+          
+          gameState.seekerPositions.push({ x, y });
+        }
+        
         createMap();
       } else {
         // No lives left - game over
@@ -942,10 +1133,19 @@ function useCloaking() {
     return;
   }
   logAction("🕶️ Cloaking activated!");
-  playSound('powerup');
+  playSound('cloak');
   gameState.cloakingAvailable = false;
   startCooldown('cloaking', toolStats.cloaking.cooldown);
   addActiveEffect('🕶️ Cloaking', toolStats.cloaking.duration);
+
+  // Add visual effect
+  const playerTile = document.querySelector(".hider");
+  if (playerTile) {
+    playerTile.classList.add("cloaking-active");
+    setTimeout(() => {
+      playerTile.classList.remove("cloaking-active");
+    }, toolStats.cloaking.duration * 1000);
+  }
 
   setTimeout(() => {
     gameState.cloakingAvailable = true;
@@ -961,7 +1161,7 @@ function plantDecoyData() {
     return;
   }
   logAction("📡 Decoy planted! Confusing AI.");
-  playSound('powerup');
+  playSound('decoy');
   gameState.decoyPlanted = true;
   startCooldown('decoy', toolStats.decoy.cooldown);
   addActiveEffect('📡 Decoy', toolStats.decoy.duration);
@@ -971,6 +1171,16 @@ function plantDecoyData() {
     x: Math.floor(Math.random() * gameState.mapSize),
     y: Math.floor(Math.random() * gameState.mapSize)
   }));
+  
+  // Add visual effect
+  const seekers = document.querySelectorAll(".seeker");
+  seekers.forEach(seeker => {
+    const effect = document.createElement("div");
+    effect.className = "decoy-effect";
+    seeker.appendChild(effect);
+    setTimeout(() => effect.remove(), 1000);
+  });
+  
   createMap();
 
   setTimeout(() => {
