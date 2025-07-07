@@ -1,4 +1,3 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,32 +8,6 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body onload="initGame()">
-  <!-- Mobile Controls (initially hidden) -->
-  <div id="mobile-controls" style="display: none;">
-    <div class="d-pad">
-      <div class="d-pad-center"></div>
-      <div class="d-pad-up" ontouchstart="handleMobileInput('up')" ontouchend="clearMobileInput()"></div>
-      <div class="d-pad-down" ontouchstart="handleMobileInput('down')" ontouchend="clearMobileInput()"></div>
-      <div class="d-pad-left" ontouchstart="handleMobileInput('left')" ontouchend="clearMobileInput()"></div>
-      <div class="d-pad-right" ontouchstart="handleMobileInput('right')" ontouchend="clearMobileInput()"></div>
-    </div>
-    <div class="action-buttons">
-      <button class="action-btn jump-btn" ontouchstart="handleMobileInput('jump')">A</button>
-      <button class="action-btn run-btn" ontouchstart="handleMobileInput('run')">B</button>
-    </div>
-    <div class="mobile-menu-btn" onclick="toggleMobileMenu()">≡</div>
-  </div>
-
-  <!-- Mobile Menu (initially hidden) -->
-  <div id="mobile-menu" class="mobile-menu">
-    <button onclick="useCloaking()">🕶️ Cloak</button>
-    <button onclick="plantDecoyData()">🧭 Decoy</button>
-    <button onclick="enterDarkWebMarket()">🛒 Dark Web</button>
-    <button onclick="openUpgradeMenu()">🔧 Upgrade</button>
-    <button onclick="togglePause()">⏸️ Pause</button>
-    <button onclick="toggleMobileMenu()">✕ Close</button>
-  </div>
-
   <!-- Main Menu -->
   <div id="main-menu" class="cyber-glass">
     <div class="cyber-logo">CLOAKER</div>
@@ -80,8 +53,8 @@
 
     <!-- Main Game Area -->
     <div class="game-grid">
-      <!-- Left Panel - Tools (hidden on mobile) -->
-      <div class="cyber-panel tools-panel mobile-hide">
+      <!-- Left Panel - Tools -->
+      <div class="cyber-panel tools-panel">
         <div class="panel-title">PRIVACY TOOLS</div>
         <div class="cyber-buttons">
           <button class="cyber-tool" onclick="useCloaking()">
@@ -112,15 +85,15 @@
         <div id="map-container" class="cyber-grid"></div>
       </div>
 
-      <!-- Right Panel - Inventory (hidden on mobile) -->
-      <div class="cyber-panel inventory-panel mobile-hide">
+      <!-- Right Panel - Inventory -->
+      <div class="cyber-panel inventory-panel">
         <div class="panel-title">INVENTORY</div>
         <div id="inventory" class="inventory-grid"></div>
       </div>
     </div>
 
-    <!-- Bottom Panel - Log and Shop (hidden on mobile) -->
-    <div class="bottom-panels mobile-hide">
+    <!-- Bottom Panel - Log and Shop -->
+    <div class="bottom-panels">
       <div class="cyber-panel log-panel">
         <div class="panel-title">TRANSACTION LOG</div>
         <div id="log" class="cyber-log"></div>
