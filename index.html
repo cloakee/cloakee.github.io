@@ -2,35 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>CLOAKER | Cyber Stealth Game</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Orbitron:wght@500&display=swap">
   <link rel="stylesheet" href="styles.css">
-  <script>
-    // Force landscape orientation on mobile
-    function lockOrientation() {
-      if (window.innerHeight > window.innerWidth) {
-        document.getElementById('orientation-warning').style.display = 'flex';
-      } else {
-        document.getElementById('orientation-warning').style.display = 'none';
-      }
-    }
-    
-    window.addEventListener('resize', lockOrientation);
-    window.addEventListener('load', lockOrientation);
-    window.addEventListener('orientationchange', lockOrientation);
-  </script>
 </head>
 <body onload="initGame()">
-  <!-- Orientation Warning -->
-  <div id="orientation-warning" class="cyber-modal">
-    <div class="modal-content cyber-glass">
-      <div class="modal-title">ROTATE DEVICE</div>
-      <div class="modal-message">Please rotate to landscape mode</div>
-      <div class="modal-detail">For optimal gameplay experience</div>
-    </div>
-  </div>
-
   <!-- Main Menu -->
   <div id="main-menu" class="cyber-glass">
     <div class="cyber-logo">CLOAKER</div>
@@ -51,7 +28,35 @@
   </div>
 
   <div id="game-ui" style="display: none;">
-    <!-- Header Bar -->
+    
+
+    <!-- Mobile Controls -->
+<div class="mobile-controls">
+
+<div class="mobile-controls">
+  <!-- Landscape Message (hidden by default) -->
+  <div class="landscape-message">
+    <p>For best experience, play in landscape mode</p>
+  </div>
+  
+  
+  <!-- D-Pad -->
+  <div class="d-pad">
+    <div class="d-pad-center"></div>
+    <button class="d-pad-up" onclick="movePlayer(gameState.hiderPosition.x, gameState.hiderPosition.y - 1)">↑</button>
+    <button class="d-pad-down" onclick="movePlayer(gameState.hiderPosition.x, gameState.hiderPosition.y + 1)">↓</button>
+    <button class="d-pad-left" onclick="movePlayer(gameState.hiderPosition.x - 1, gameState.hiderPosition.y)">←</button>
+    <button class="d-pad-right" onclick="movePlayer(gameState.hiderPosition.x + 1, gameState.hiderPosition.y)">→</button>
+  </div>
+  
+  <!-- Action Buttons -->
+  <div class="action-buttons">
+    <button class="action-btn cloak-btn" onclick="useCloaking()">🕶️</button>
+    <button class="action-btn decoy-btn" onclick="plantDecoyData()">🧭</button>
+    <button class="action-btn market-btn" onclick="enterDarkWebMarket()">🛒</button>
+  </div>
+</div>
+<!-- Header Bar -->
     <div class="cyber-header">
       <div class="cyber-logo-small">CLOAKER</div>
       <div class="cyber-stats">
@@ -74,69 +79,56 @@
       </div>
     </div>
 
-    <!-- Main Game Area - Landscape Layout -->
-    <div class="landscape-grid">
-      <!-- Left Panel - Game Map (2/3 width) -->
-      <div class="game-map-panel">
+    <!-- Main Game Area -->
+    <div class="game-grid">
+      <!-- Left Panel - Tools -->
+      <div class="cyber-panel tools-panel">
+        <div class="panel-title">PRIVACY TOOLS</div>
+        <div class="cyber-buttons">
+          <button class="cyber-tool" onclick="useCloaking()">
+            <div class="tool-icon">🕶️</div>
+            <div class="tool-name">CLOAK</div>
+          </button>
+          <button class="cyber-tool" onclick="plantDecoyData()">
+            <div class="tool-icon">🧭</div>
+            <div class="tool-name">DECOY</div>
+          </button>
+          <button class="cyber-tool" onclick="enterDarkWebMarket()">
+            <div class="tool-icon">🛒</div>
+            <div class="tool-name">DARK WEB</div>
+          </button>
+          <button class="cyber-tool" onclick="openUpgradeMenu()">
+            <div class="tool-icon">🔧</div>
+            <div class="tool-name">UPGRADE</div>
+          </button>
+          <button class="cyber-tool" id="pauseBtn" onclick="togglePause()">
+            <div class="tool-icon">⏸️</div>
+            <div class="tool-name">PAUSE</div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Center Panel - Game Map -->
+      <div class="cyber-panel main-panel">
         <div id="map-container" class="cyber-grid"></div>
       </div>
 
-      <!-- Right Panel - Controls (1/3 width) -->
-      <div class="controls-panel">
-        <!-- Tools -->
-        <div class="cyber-panel tools-panel">
-          <div class="panel-title">PRIVACY TOOLS</div>
-          <div class="mobile-tools-grid">
-            <button class="cyber-tool" onclick="useCloaking()">
-              <div class="tool-icon">🕶️</div>
-              <div class="tool-name">CLOAK</div>
-            </button>
-            <button class="cyber-tool" onclick="plantDecoyData()">
-              <div class="tool-icon">🧭</div>
-              <div class="tool-name">DECOY</div>
-            </button>
-            <button class="cyber-tool" onclick="enterDarkWebMarket()">
-              <div class="tool-icon">🛒</div>
-              <div class="tool-name">DARK WEB</div>
-            </button>
-            <button class="cyber-tool" onclick="openUpgradeMenu()">
-              <div class="tool-icon">🔧</div>
-              <div class="tool-name">UPGRADE</div>
-            </button>
-            <button class="cyber-tool" onclick="togglePause()">
-              <div class="tool-icon">⏸️</div>
-              <div class="tool-name">PAUSE</div>
-            </button>
-          </div>
-        </div>
-
-        <!-- Inventory -->
-        <div class="cyber-panel inventory-panel">
-          <div class="panel-title">INVENTORY</div>
-          <div id="inventory" class="mobile-inventory-grid"></div>
-        </div>
-
-        <!-- Log -->
-        <div class="cyber-panel log-panel">
-          <div class="panel-title">TRANSACTION LOG</div>
-          <div id="log" class="cyber-log"></div>
-        </div>
-
-        <!-- Shop -->
-        <div class="cyber-panel shop-panel">
-          <div class="panel-title">PRIVACY MARKET</div>
-          <div id="shop" class="mobile-shop-grid"></div>
-        </div>
+      <!-- Right Panel - Inventory -->
+      <div class="cyber-panel inventory-panel">
+        <div class="panel-title">INVENTORY</div>
+        <div id="inventory" class="inventory-grid"></div>
       </div>
     </div>
 
-    <!-- Mobile Controls -->
-    <div id="mobile-controls" class="mobile-only">
-      <div class="dpad">
-        <button class="mobile-btn up" ontouchstart="handleMobileInput('up')">↑</button>
-        <button class="mobile-btn left" ontouchstart="handleMobileInput('left')">←</button>
-        <button class="mobile-btn down" ontouchstart="handleMobileInput('down')">↓</button>
-        <button class="mobile-btn right" ontouchstart="handleMobileInput('right')">→</button>
+    <!-- Bottom Panel - Log and Shop -->
+    <div class="bottom-panels">
+      <div class="cyber-panel log-panel">
+        <div class="panel-title">TRANSACTION LOG</div>
+        <div id="log" class="cyber-log"></div>
+      </div>
+      <div class="cyber-panel shop-panel">
+        <div class="panel-title">PRIVACY MARKET</div>
+        <div id="shop" class="cyber-shop"></div>
       </div>
     </div>
   </div>

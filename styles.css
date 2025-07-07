@@ -565,328 +565,270 @@ body {
     font-size: 14px;
   }
 }
-/* Mobile Responsive Support */
-.mobile-only {
-  display: none;
+
+/* Mobile Controls */
+.mobile-controls {
+  position: fixed;
+  bottom: 20px;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 20px;
+  pointer-events: none; /* Allows clicks to pass through to game elements */
+  z-index: 100;
 }
 
+.d-pad {
+  position: relative;
+  width: 120px;
+  height: 120px;
+}
+
+.d-pad-center {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  background: rgba(0, 240, 255, 0.2);
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border: 1px solid var(--primary);
+}
+
+.d-pad button {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  background: rgba(0, 240, 255, 0.1);
+  border: 1px solid var(--primary);
+  color: var(--text-primary);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  pointer-events: auto;
+  transition: all 0.2s;
+}
+
+.d-pad button:active {
+  background: rgba(0, 240, 255, 0.3);
+  transform: scale(0.95);
+}
+
+.d-pad-up {
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.d-pad-down {
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.d-pad-left {
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.d-pad-right {
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.action-buttons {
+  display: flex;
+  gap: 15px;
+  align-items: flex-end;
+}
+
+.action-btn {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: rgba(0, 240, 255, 0.1);
+  border: 1px solid var(--primary);
+  color: var(--text-primary);
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  transition: all 0.2s;
+}
+
+.action-btn:active {
+  background: rgba(0, 240, 255, 0.3);
+  transform: scale(0.95);
+}
+
+/* Mobile Layout Adjustments */
 @media (max-width: 768px) {
-  .mobile-only {
-    display: flex;
+  #game-ui {
+    padding-bottom: 180px; /* Space for controls */
   }
   
-  #mobile-controls {
+  .game-grid {
+    grid-template-rows: auto 1fr auto;
+  }
+  
+  .cyber-panel.tools-panel,
+  .cyber-panel.inventory-panel {
+    display: none; /* Hide side panels on mobile */
+  }
+  
+  .bottom-panels {
     position: fixed;
-    bottom: 20px;
+    bottom: 180px;
     left: 0;
     right: 0;
-    justify-content: space-between;
-    padding: 0 20px;
-    z-index: 100;
+    padding: 10px;
+    background: var(--bg-dark);
+    z-index: 99;
+    max-height: 150px;
+    overflow: auto;
   }
   
-  .dpad {
-    display: grid;
-    grid-template-areas:
-      ". up ."
-      "left . right"
-      ". down .";
-    gap: 5px;
+  .cyber-log, .cyber-shop {
+    max-height: 100px;
+    overflow: auto;
   }
   
-  .mobile-btn {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background: rgba(0, 240, 255, 0.2);
-    border: 1px solid var(--primary);
-    color: white;
-    font-size: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    touch-action: manipulation;
+  /* Make map tiles larger for touch */
+  .tile {
+    width: 45px;
+    height: 45px;
+    font-size: 18px;
   }
   
-  .up { grid-area: up; }
-  .left { grid-area: left; }
-  .right { grid-area: right; }
-  .down { grid-area: down; }
-  
-  .action-buttons {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-  }
-  
-  .action {
-    width: 70px;
-    height: 70px;
+  #map-container {
+    grid-gap: 6px;
+    padding: 15px;
   }
 }
 
-/* Tile Responsive for Mobile */
-@media (max-width: 768px) {
-  #map-container {
-    padding: 5px;
-    grid-gap: 2px;
-  }
-  
+@media (max-width: 480px) {
   .tile {
-    width: 12vw;
-    height: 12vw;
-    min-width: 40px;
-    min-height: 40px;
-    font-size: 6vw;
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
   }
   
+  .mobile-controls {
+    padding: 0 10px;
+  }
+  
+  .d-pad {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .action-btn {
+    width: 45px;
+    height: 45px;
+    font-size: 20px;
+  }
+}
+
+/* Force landscape on mobile */
+@media screen and (max-width: 768px) and (orientation: portrait) {
+  body::before {
+    content: "Please rotate your device to landscape mode for best experience";
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--bg-dark);
+    color: var(--primary);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 20px;
+    font-size: 1.5rem;
+    z-index: 9999;
+    pointer-events: none;
+  }
+  
+  #game-ui {
+    transform: rotate(90deg);
+    transform-origin: left top;
+    width: 100vh;
+    height: 100vw;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    overflow-x: hidden;
+  }
+}
+
+/* D-Pad only in landscape */
+@media screen and (max-width: 768px) and (orientation: landscape) {
+  .mobile-controls {
+    display: flex;
+  }
+  
+  /* Adjust layout for landscape */
   .game-grid {
     grid-template-columns: 1fr;
     grid-template-rows: auto 1fr auto;
   }
   
-  .tools-panel, .inventory-panel {
-    order: 3;
-  }
-  
-  .main-panel {
-    order: 2;
-  }
-}
-
-/* Responsive UI Reorganization*/
-
-@media (max-width: 768px) {
-  .cyber-header {
-    flex-direction: column;
-    align-items: flex-start;
-    padding: 10px;
-  }
-  
-  .cyber-stats {
-    width: 100%;
-    justify-content: space-between;
-    margin-top: 10px;
-  }
-  
-  .stat-item {
-    min-width: 0;
-    padding: 5px 8px;
-  }
-  
-  .stat-value {
-    font-size: 1.1rem;
+  .cyber-panel.tools-panel,
+  .cyber-panel.inventory-panel {
+    display: none;
   }
   
   .bottom-panels {
-    grid-template-columns: 1fr;
-  }
-  
-  .cyber-buttons {
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-  
-  .cyber-tool {
-    flex: 1 0 45%;
-    max-width: 120px;
-  }
-  
-  .inventory-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-  
-  .cyber-shop {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-/* Modal Touch Freindly */
-
-@media (max-width: 768px) {
-  .modal-content {
-    width: 95%;
-    padding: 20px;
-  }
-  
-  .modal-buttons button {
-    padding: 15px;
-    font-size: 1rem;
-  }
-  
-  .upgrade-item button {
-    padding: 12px;
-  }
-}
-
-/*Prevent Input Zoom*/
-input, select, textarea, button {
-  font-size: 16px;
-}
-
-/* Base Styles (unchanged) */
-:root {
-  --primary: #00f0ff;
-  --secondary: #ff00aa;
-  --bg-dark: #0a0a12;
-  --bg-darker: #050508;
-  --bg-light: #1a1a2a;
-  --text-primary: #e0e0ff;
-  --text-secondary: #a0a0ff;
-  --accent-red: #ff0044;
-  --accent-green: #00ff88;
-  --accent-blue: #0088ff;
-  --accent-purple: #aa00ff;
-  --glass: rgba(20, 20, 40, 0.7);
-  --glass-border: rgba(100, 200, 255, 0.2);
-}
-
-/* Mobile Landscape Layout */
-@media (max-width: 768px) and (orientation: landscape) {
-  body {
-    overflow: hidden;
-  }
-  
-  #game-ui {
-    height: 100vh;
+    position: fixed;
+    bottom: 120px;
+    left: 0;
+    right: 0;
     padding: 10px;
-  }
-  
-  .landscape-grid {
-    display: flex;
-    height: calc(100% - 60px);
-    gap: 10px;
-  }
-  
-  .game-map-panel {
-    flex: 2;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .controls-panel {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    height: 100%;
-    overflow-y: auto;
+    background: var(--bg-dark);
+    z-index: 99;
+    max-height: 120px;
+    overflow: auto;
   }
   
   #map-container {
-    flex: 1;
-    display: grid;
-    grid-gap: 2px;
-    padding: 5px;
-    height: 100%;
+    margin-bottom: 120px;
   }
   
   .tile {
-    width: 100%;
-    height: 100%;
-    min-height: 30px;
-    font-size: 3vh;
-  }
-  
-  .mobile-tools-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-  }
-  
-  .mobile-inventory-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-  }
-  
-  .mobile-shop-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-  }
-  
-  .cyber-tool {
-    padding: 6px;
-    font-size: 0.8rem;
-  }
-  
-  .tool-icon {
-    font-size: 1rem;
-  }
-  
-  .cyber-panel {
-    padding: 8px;
-  }
-  
-  .panel-title {
-    font-size: 0.8rem;
-    margin-bottom: 8px;
-  }
-  
-  .cyber-log {
-    height: 80px;
-    font-size: 0.7rem;
-  }
-  
-  /* Mobile Controls */
-  #mobile-controls {
-    position: fixed;
-    bottom: 10px;
-    left: 0;
-    right: 0;
-    display: flex;
-    justify-content: center;
-    z-index: 100;
-  }
-  
-  .dpad {
-    display: grid;
-    grid-template-areas:
-      ". up ."
-      "left . right"
-      ". down .";
-    gap: 5px;
-    background: rgba(0, 0, 0, 0.5);
-    border-radius: 50px;
-    padding: 10px;
-  }
-  
-  .mobile-btn {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background: rgba(0, 240, 255, 0.3);
-    border: 1px solid var(--primary);
-    color: white;
-    font-size: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    touch-action: manipulation;
-  }
-  
-  .up { grid-area: up; }
-  .left { grid-area: left; }
-  .right { grid-area: right; }
-  .down { grid-area: down; }
-  
-  /* Orientation Warning */
-  #orientation-warning {
-    display: none;
-    background: rgba(0, 0, 0, 0.9);
+    width: calc(12vw - 10px);
+    height: calc(12vw - 10px);
+    font-size: 5vw;
   }
 }
 
-/* Portrait Warning */
-@media (max-width: 768px) and (orientation: portrait) {
-  #orientation-warning {
-    display: flex;
+@media screen and (max-width: 768px) and (orientation: portrait) {
+  .mobile-controls {
+    display: none;
   }
-  
-  #main-menu, #game-ui {
-    display: none !important;
+}
+
+.landscape-message {
+  display: none;
+  position: fixed;
+  top: 10px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  color: var(--primary);
+  font-size: 0.9rem;
+  z-index: 1000;
+}
+
+@media screen and (max-width: 768px) and (orientation: landscape) {
+  .landscape-message {
+    display: block;
+    animation: pulse 2s infinite;
   }
 }
