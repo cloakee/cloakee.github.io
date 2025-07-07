@@ -1,3 +1,80 @@
+
+// game.js
+// Add these new functions at the beginning of the file
+
+// Mobile detection
+function isMobileDevice() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
+// Mobile input handling
+let mobileInput = null;
+
+function handleMobileInput(direction) {
+  mobileInput = direction;
+  const { x, y } = gameState.hiderPosition;
+  
+  switch(direction) {
+    case 'up':
+      if (y > 0) movePlayer(x, y - 1);
+      break;
+    case 'down':
+      if (y < gameState.mapSize - 1) movePlayer(x, y + 1);
+      break;
+    case 'left':
+      if (x > 0) movePlayer(x - 1, y);
+      break;
+    case 'right':
+      if (x < gameState.mapSize - 1) movePlayer(x + 1, y);
+      break;
+    case 'jump':
+      useCloaking();
+      break;
+    case 'run':
+      plantDecoyData();
+      break;
+  }
+}
+
+function clearMobileInput() {
+  mobileInput = null;
+}
+
+function toggleMobileMenu() {
+  document.getElementById('mobile-menu').classList.toggle('show');
+}
+
+// Update initGame function to handle mobile UI
+function initGame() {
+  updateScoreDisplay(0);
+  updateLevelDisplay(1);
+  updateCoinsDisplay(0);
+  updateLivesDisplay(3);
+  initShop();
+  
+  // Add keyboard event listeners for desktop
+  if (!isMobileDevice()) {
+    document.addEventListener('keydown', handleKeyPress);
+  } else {
+    // Show mobile controls
+    document.getElementById('mobile-controls').style.display = 'flex';
+  }
+  
+  // Add click sound to all buttons
+  document.querySelectorAll('button').forEach(button => {
+    button.addEventListener('click', () => playSound('click'));
+  });
+
+  // Initialize music toggle
+  document.getElementById("musicToggle").addEventListener('click', toggleMusic);
+  if (gameState.musicEnabled) {
+    sounds.background.loop = true;
+    sounds.background.volume = 0.3;
+    sounds.background.play();
+  }
+}
+
+
 // Game State Management
 const gameState = {
   currentRole: null,
@@ -171,10 +248,10 @@ function toggleMusic() {
     sounds.background.loop = true;
     sounds.background.volume = 0.3;
     sounds.background.play();
-    document.getElementById("musicToggle").textContent = "🔊 Music ON";
+    document.getElementById("musicToggle").innerHTML = '<span class="glow-text">🔊 AUDIO: ACTIVE</span>';
   } else {
     sounds.background.pause();
-    document.getElementById("musicToggle").textContent = "🔇 Music OFF";
+    document.getElementById("musicToggle").innerHTML = '<span class="glow-text">🔇 AUDIO: MUTED</span>';
   }
 }
 
@@ -418,70 +495,44 @@ function startGame(role) {
   document.getElementById("main-menu").style.display = "none";
   document.getElementById("game-ui").style.display = "flex";
 
-  initToolBar();
   resetGame();
   initInventory();
   if (gameState.musicEnabled) sounds.background.play();
 }
 
-// Initialize the toolbar with stats
-function initToolBar() {
-  const container = document.getElementById("tool-bar");
-  container.innerHTML = '';
-
-  const items = [
-    { icon: "🎯 Score: 0", tooltip: "Your current score", id: "scoreDisplay" },
-    { icon: "🔓 Lv: 1", tooltip: "Current game level", id: "levelDisplay" },
-    { icon: "🪙 Coins: 0", tooltip: "Coins you've earned", id: "coinDisplay" },
-    { icon: "❤️ Lives: 3", tooltip: "Remaining lives", id: "livesDisplay" }
-  ];
-
-  items.forEach(item => {
-    const div = document.createElement("div");
-    div.className = "stat-item";
-    div.innerHTML = item.icon + `<span class="tooltip">${item.tooltip}</span>`;
-    if (item.id) div.id = item.id;
-    container.appendChild(div);
-  });
-}
-
 // Update score display
 function updateScoreDisplay(newScore) {
   gameState.score = newScore;
-  const scoreDisplay = document.getElementById("scoreDisplay");
-  if (scoreDisplay) {
-    scoreDisplay.innerHTML = `🎯 Score: ${newScore}<span class="tooltip">Your current score</span>`;
+  const scoreValue = document.getElementById("scoreValue");
+  if (scoreValue) {
+    scoreValue.textContent = newScore;
   }
 }
 
 // Update level display
 function updateLevelDisplay(newLevel) {
   gameState.level = newLevel;
-  const levelDisplay = document.getElementById("levelDisplay");
-  if (levelDisplay) {
-    levelDisplay.innerHTML = `🔓 Lv: ${newLevel}<span class="tooltip">Current game level</span>`;
+  const levelValue = document.getElementById("levelValue");
+  if (levelValue) {
+    levelValue.textContent = newLevel;
   }
 }
 
 // Update coins display
 function updateCoinsDisplay(amount) {
   gameState.coins = amount;
-  const coinDisplay = document.getElementById("coinDisplay");
-  if (coinDisplay) {
-    coinDisplay.innerHTML = `🪙 Coins: ${amount}<span class="tooltip">Coins you've earned</span>`;
+  const coinValue = document.getElementById("coinValue");
+  if (coinValue) {
+    coinValue.textContent = amount;
   }
 }
 
 // Update lives display
 function updateLivesDisplay(lives) {
   gameState.lives = lives;
-  const livesDisplay = document.getElementById("livesDisplay");
-  if (livesDisplay) {
-    let hearts = '';
-    for (let i = 0; i < lives; i++) {
-      hearts += '❤️';
-    }
-    livesDisplay.innerHTML = `❤️ Lives: ${hearts}<span class="tooltip">Remaining lives</span>`;
+  const livesValue = document.getElementById("livesValue");
+  if (livesValue) {
+    livesValue.textContent = lives;
   }
 }
 
@@ -499,9 +550,9 @@ function openUpgradeMenu() {
     div.innerHTML = `
       <strong>${tool.icon} ${tool.name} (Lvl ${tool.level})</strong>
       <span>${tool.desc}</span>
-      <button onclick="upgradeTool('${tool.name}')">
-        <span>Upgrade</span>
-        <span>${getUpgradeCost(tool)}🪙</span>
+      <button class="cyber-button" onclick="upgradeTool('${tool.name}')">
+        <span class="glow-text">Upgrade</span>
+        <span>${getUpgradeCost(tool)} CREDITS</span>
       </button>
     `;
     list.appendChild(div);
@@ -571,7 +622,7 @@ function initShop() {
     div.innerHTML = `
       <div class="shop-icon">${item.icon}</div>
       <div>${item.name}</div>
-      <div>${item.cost}🪙</div>
+      <div>${item.cost} CREDITS</div>
       <span class="tooltip-inv">${item.desc}</span>
     `;
     div.onclick = () => buyItem(item);
