@@ -1228,3 +1228,96 @@ function addActiveEffect(name, duration) {
     clearInterval(timer);
   }, duration * 1000);
 }
+
+// Mobile Input Handling
+function handleMobileInput(direction) {
+  if (!gameState.gameActive || gameState.isPaused) return;
+  
+  const { x, y } = gameState.hiderPosition;
+  switch(direction) {
+    case 'up': if (y > 0) movePlayer(x, y - 1); break;
+    case 'down': if (y < gameState.mapSize - 1) movePlayer(x, y + 1); break;
+    case 'left': if (x > 0) movePlayer(x - 1, y); break;
+    case 'right': if (x < gameState.mapSize - 1) movePlayer(x + 1, y); break;
+  }
+}
+
+// Touch event listeners for mobile
+function initMobileControls() {
+  // Add touch event listeners for directional buttons
+  const directions = ['up', 'down', 'left', 'right'];
+  directions.forEach(dir => {
+    const btn = document.querySelector(`.mobile-btn.${dir}`);
+    if (btn) {
+      btn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        handleMobileInput(dir);
+      });
+      btn.addEventListener('touchend', (e) => e.preventDefault());
+    }
+  });
+  
+  // Add swipe detection
+  let touchStartX = 0;
+  let touchStartY = 0;
+  
+  document.addEventListener('touchstart', (e) => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  }, { passive: false });
+  
+  document.addEventListener('touchmove', (e) => {
+    if (!gameState.gameActive || gameState.isPaused) return;
+    
+    const touchEndX = e.touches[0].clientX;
+    const touchEndY = e.touches[0].clientY;
+    const dx = touchEndX - touchStartX;
+    const dy = touchEndY - touchStartY;
+    
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 30) {
+      // Horizontal swipe
+      if (dx > 0) handleMobileInput('right');
+      else handleMobileInput('left');
+      touchStartX = touchEndX;
+      touchStartY = touchEndY;
+      e.preventDefault();
+    } else if (Math.abs(dy) > 30) {
+      // Vertical swipe
+      if (dy > 0) handleMobileInput('down');
+      else handleMobileInput('up');
+      touchStartX = touchEndX;
+      touchStartY = touchEndY;
+      e.preventDefault();
+    }
+  }, { passive: false });
+}
+
+// Update initGame() to include mobile controls
+function initGame() {
+  updateScoreDisplay(0);
+  updateLevelDisplay(1);
+  updateCoinsDisplay(0);
+  updateLivesDisplay(3);
+  initShop();
+  
+  // Add keyboard event listeners
+  document.addEventListener('keydown', handleKeyPress);
+  
+  // Add click sound to all buttons
+  document.querySelectorAll('button').forEach(button => {
+    button.addEventListener('click', () => playSound('click'));
+  });
+
+  // Initialize music toggle
+  document.getElementById("musicToggle").addEventListener('click', toggleMusic);
+  if (gameState.musicEnabled) {
+    sounds.background.loop = true;
+    sounds.background.volume = 0.3;
+    sounds.background.play();
+  }
+  
+  // Initialize mobile controls if on mobile
+  if (/Mobi|Android/i.test(navigator.userAgent)) {
+    initMobileControls();
+  }
+}

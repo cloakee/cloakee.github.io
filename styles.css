@@ -724,3 +724,169 @@ body {
 input, select, textarea, button {
   font-size: 16px;
 }
+
+/* Base Styles (unchanged) */
+:root {
+  --primary: #00f0ff;
+  --secondary: #ff00aa;
+  --bg-dark: #0a0a12;
+  --bg-darker: #050508;
+  --bg-light: #1a1a2a;
+  --text-primary: #e0e0ff;
+  --text-secondary: #a0a0ff;
+  --accent-red: #ff0044;
+  --accent-green: #00ff88;
+  --accent-blue: #0088ff;
+  --accent-purple: #aa00ff;
+  --glass: rgba(20, 20, 40, 0.7);
+  --glass-border: rgba(100, 200, 255, 0.2);
+}
+
+/* Mobile Landscape Layout */
+@media (max-width: 768px) and (orientation: landscape) {
+  body {
+    overflow: hidden;
+  }
+  
+  #game-ui {
+    height: 100vh;
+    padding: 10px;
+  }
+  
+  .landscape-grid {
+    display: flex;
+    height: calc(100% - 60px);
+    gap: 10px;
+  }
+  
+  .game-map-panel {
+    flex: 2;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .controls-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    height: 100%;
+    overflow-y: auto;
+  }
+  
+  #map-container {
+    flex: 1;
+    display: grid;
+    grid-gap: 2px;
+    padding: 5px;
+    height: 100%;
+  }
+  
+  .tile {
+    width: 100%;
+    height: 100%;
+    min-height: 30px;
+    font-size: 3vh;
+  }
+  
+  .mobile-tools-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  
+  .mobile-inventory-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  
+  .mobile-shop-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  
+  .cyber-tool {
+    padding: 6px;
+    font-size: 0.8rem;
+  }
+  
+  .tool-icon {
+    font-size: 1rem;
+  }
+  
+  .cyber-panel {
+    padding: 8px;
+  }
+  
+  .panel-title {
+    font-size: 0.8rem;
+    margin-bottom: 8px;
+  }
+  
+  .cyber-log {
+    height: 80px;
+    font-size: 0.7rem;
+  }
+  
+  /* Mobile Controls */
+  #mobile-controls {
+    position: fixed;
+    bottom: 10px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    z-index: 100;
+  }
+  
+  .dpad {
+    display: grid;
+    grid-template-areas:
+      ". up ."
+      "left . right"
+      ". down .";
+    gap: 5px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 50px;
+    padding: 10px;
+  }
+  
+  .mobile-btn {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: rgba(0, 240, 255, 0.3);
+    border: 1px solid var(--primary);
+    color: white;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: manipulation;
+  }
+  
+  .up { grid-area: up; }
+  .left { grid-area: left; }
+  .right { grid-area: right; }
+  .down { grid-area: down; }
+  
+  /* Orientation Warning */
+  #orientation-warning {
+    display: none;
+    background: rgba(0, 0, 0, 0.9);
+  }
+}
+
+/* Portrait Warning */
+@media (max-width: 768px) and (orientation: portrait) {
+  #orientation-warning {
+    display: flex;
+  }
+  
+  #main-menu, #game-ui {
+    display: none !important;
+  }
+}
