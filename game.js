@@ -27,6 +27,18 @@ const gameState = {
   lastStepTime: 0
 };
 
+
+// Mobile Responsive Support
+function handleMobileInput(direction) {
+  const { x, y } = gameState.hiderPosition;
+  switch(direction) {
+    case 'up': if (y > 0) movePlayer(x, y - 1); break;
+    case 'down': if (y < gameState.mapSize - 1) movePlayer(x, y + 1); break;
+    case 'left': if (x > 0) movePlayer(x - 1, y); break;
+    case 'right': if (x < gameState.mapSize - 1) movePlayer(x + 1, y); break;
+  }
+}
+
 // Audio Elements
 const sounds = {
   move: document.getElementById("moveSound"),

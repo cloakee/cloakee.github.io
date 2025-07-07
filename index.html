@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>CLOAKER | Cyber Stealth Game</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Orbitron:wght@500&display=swap">
   <link rel="stylesheet" href="styles.css">
@@ -165,6 +165,20 @@
       </div>
     </div>
   </div>
+
+  <!-- Mobile Control Mobile Only -->
+<div id="mobile-controls" class="mobile-only">
+  <div class="dpad">
+    <button class="mobile-btn up" onclick="handleMobileInput('up')">↑</button>
+    <button class="mobile-btn left" onclick="handleMobileInput('left')">←</button>
+    <button class="mobile-btn down" onclick="handleMobileInput('down')">↓</button>
+    <button class="mobile-btn right" onclick="handleMobileInput('right')">→</button>
+  </div>
+  <div class="action-buttons">
+    <button class="mobile-btn action" onclick="useCloaking()">🕶️</button>
+    <button class="mobile-btn action" onclick="plantDecoyData()">📡</button>
+  </div>
+</div>
 
   <!-- Audio Elements -->
   <audio id="moveSound" src="sounds/move.wav" preload="auto"></audio>
