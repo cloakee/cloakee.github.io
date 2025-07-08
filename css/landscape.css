@@ -1,0 +1,90 @@
+/* Landscape-specific styles */
+@media screen and (orientation: portrait) {
+    #game-container {
+        display: none !important;
+    }
+    
+    #orientation-warning {
+        display: flex !important;
+    }
+}
+
+/* Adjustments for landscape */
+@media screen and (orientation: landscape) {
+    #game-header {
+        padding: 5px;
+    }
+    
+    .ui-element {
+        min-width: 70px;
+        padding: 3px 5px;
+    }
+    
+    .ui-element span {
+        font-size: 0.6rem;
+    }
+    
+    .ui-element .value {
+        font-size: 1rem;
+    }
+    
+    #map-container {
+        grid-template-columns: repeat(5, 40px);
+    }
+    
+    .tile {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
+    
+    .action-buttons {
+        gap: 5px;
+    }
+    
+    .action-btn {
+        padding: 8px;
+        font-size: 0.8rem;
+        min-width: 70px;
+    }
+    
+    .game-log {
+        height: 60px;
+        font-size: 0.7rem;
+    }
+}
+
+/* For larger screens */
+@media screen and (min-width: 768px) and (orientation: landscape) {
+    #map-container {
+        grid-template-columns: repeat(5, 60px);
+    }
+    
+    .tile {
+        width: 60px;
+        height: 60px;
+        font-size: 1.8rem;
+    }
+    
+    .ui-element {
+        min-width: 100px;
+    }
+    
+    .ui-element span {
+        font-size: 0.8rem;
+    }
+    
+    .ui-element .value {
+        font-size: 1.3rem;
+    }
+    
+    .action-btn {
+        padding: 10px;
+        font-size: 1rem;
+    }
+    
+    .game-log {
+        height: 80px;
+        font-size: 0.9rem;
+    }
+}

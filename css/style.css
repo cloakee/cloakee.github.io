@@ -1,1 +1,398 @@
+/* Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Press Start 2P', cursive;
+}
 
+body {
+    background-color: #1a1a2e;
+    color: white;
+    overflow: hidden;
+    height: 100vh;
+    touch-action: manipulation;
+}
+
+/* Orientation Warning */
+#orientation-warning {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #1a1a2e;
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    flex-direction: column;
+}
+
+.warning-content {
+    padding: 20px;
+    max-width: 80%;
+}
+
+.warning-content h1 {
+    color: #ff5555;
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+}
+
+.phone-icon {
+    font-size: 3rem;
+    margin-top: 20px;
+    animation: rotate 2s infinite;
+}
+
+@keyframes rotate {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(90deg); }
+}
+
+/* Game Container */
+#game-container {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-image: url('../assets/images/brick_bg.png');
+    background-size: cover;
+}
+
+/* Mario-style UI Header */
+#game-header {
+    background-color: #e74c3c;
+    padding: 10px;
+    border-bottom: 5px solid #c0392b;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.ui-panel {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+}
+
+.ui-element {
+    text-align: center;
+    padding: 5px 10px;
+    background-color: #f1c40f;
+    border-radius: 5px;
+    border: 3px solid #f39c12;
+    min-width: 80px;
+}
+
+.ui-element span {
+    font-size: 0.7rem;
+    color: #c0392b;
+    display: block;
+}
+
+.ui-element .value {
+    font-size: 1.2rem;
+    color: #2c3e50;
+    margin-top: 5px;
+}
+
+.lives .value {
+    color: #e74c3c;
+}
+
+/* Game Content */
+#game-content {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+}
+
+.screen {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-image: url('../assets/images/cloud_bg.png');
+    background-size: cover;
+}
+
+/* Main Menu */
+#main-menu {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 30px;
+}
+
+.game-title {
+    font-size: 2.5rem;
+    color: #f1c40f;
+    text-shadow: 5px 5px 0 #c0392b, -2px -2px 0 #c0392b, 2px -2px 0 #c0392b, -2px 2px 0 #c0392b;
+    margin-bottom: 50px;
+    text-align: center;
+}
+
+.menu-options {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 80%;
+    max-width: 300px;
+}
+
+.menu-button {
+    background-color: #f1c40f;
+    border: none;
+    border-radius: 10px;
+    padding: 15px;
+    font-size: 1rem;
+    color: #2c3e50;
+    cursor: pointer;
+    border-bottom: 5px solid #f39c12;
+    transition: all 0.2s;
+    width: 100%;
+}
+
+.menu-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+}
+
+.menu-button:active {
+    transform: translateY(0);
+    border-bottom: 2px solid #f39c12;
+}
+
+/* Game UI */
+#map-container {
+    display: grid;
+    grid-template-columns: repeat(5, 50px);
+    gap: 2px;
+    margin: 20px auto;
+    justify-content: center;
+}
+
+.tile {
+    width: 50px;
+    height: 50px;
+    background-color: #3498db;
+    border: 2px solid #2980b9;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5rem;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.tile.hider {
+    background-color: #2ecc71;
+    border-color: #27ae60;
+}
+
+.tile.seeker {
+    background-color: #e74c3c;
+    border-color: #c0392b;
+}
+
+.tile.goal {
+    background-color: #f1c40f;
+    border-color: #f39c12;
+}
+
+.tile.firewall {
+    background-color: #95a5a6;
+    border-color: #7f8c8d;
+}
+
+.tile.data-node {
+    background-color: #9b59b6;
+    border-color: #8e44ad;
+}
+
+.tile.teleport {
+    background-color: #1abc9c;
+    border-color: #16a085;
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    padding: 10px;
+    margin-top: 10px;
+}
+
+.action-btn {
+    background-color: #f1c40f;
+    border: none;
+    border-radius: 5px;
+    padding: 10px;
+    font-size: 0.9rem;
+    color: #2c3e50;
+    cursor: pointer;
+    border-bottom: 3px solid #f39c12;
+    transition: all 0.2s;
+    min-width: 80px;
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+}
+
+.action-btn:active {
+    transform: translateY(0);
+    border-bottom: 1px solid #f39c12;
+}
+
+/* Game Log */
+.game-log {
+    background-color: rgba(0, 0, 0, 0.7);
+    border: 2px solid #f1c40f;
+    border-radius: 5px;
+    padding: 10px;
+    margin: 10px;
+    height: 80px;
+    overflow-y: auto;
+    font-size: 0.8rem;
+    line-height: 1.4;
+}
+
+/* Modals */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 100;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background-color: #e74c3c;
+    padding: 20px;
+    border-radius: 10px;
+    border: 5px solid #c0392b;
+    max-width: 90%;
+    width: 400px;
+    text-align: center;
+    position: relative;
+}
+
+.mario-modal {
+    background-color: #f1c40f;
+    border: 5px solid #f39c12;
+    color: #2c3e50;
+}
+
+.modal h2 {
+    margin-bottom: 20px;
+    color: #c0392b;
+}
+
+.modal button {
+    background-color: #2ecc71;
+    border: none;
+    border-radius: 5px;
+    padding: 10px 20px;
+    margin-top: 20px;
+    font-size: 1rem;
+    color: white;
+    cursor: pointer;
+    border-bottom: 3px solid #27ae60;
+    transition: all 0.2s;
+}
+
+.modal button:hover {
+    background-color: #27ae60;
+}
+
+.button-group {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+/* Animations */
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+/* Effects */
+.cloaking-active {
+    animation: float 2s infinite;
+    opacity: 0.7;
+}
+
+.tor-trail-active {
+    background-color: #9b59b6 !important;
+    border-color: #8e44ad !important;
+}
+
+.move-from {
+    animation: fadeOut 0.15s forwards;
+}
+
+.move-to {
+    animation: fadeIn 0.15s forwards;
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; transform: scale(0.8); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(1.2); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+/* Particles */
+.particles {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+}
+
+/* Cooldown */
+.cooldown {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background-color: rgba(255, 255, 255, 0.3);
+    transform: scaleX(0);
+    transform-origin: left;
+}
+
+/* Active Effects */
+.active-effect {
+    position: fixed;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 0.8rem;
+    z-index: 10;
+}
