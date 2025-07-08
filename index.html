@@ -1,185 +1,165 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>CLOAKER | Cyber Stealth Game</title>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Orbitron:wght@500&display=swap">
-  <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blockchain Escape - Mario Style</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/landscape.css">
 </head>
-<body onload="initGame()">
-  <!-- Main Menu -->
-  <div id="main-menu" class="cyber-glass">
-    <div class="cyber-logo">CLOAKER</div>
-    <div class="cyber-subtitle">PRIVACY PROTOCOL SIMULATOR</div>
-    <div class="menu-buttons">
-      <button class="cyber-button" onclick="startGame('hider')">
-        <span class="glow-text">INITIATE CLOAK PROTOCOL</span>
-      </button>
-      <button class="cyber-button disabled" onclick="startGame('seeker')" disabled>
-        <span class="glow-text">TRACER MODE [LOCKED]</span>
-      </button>
-    </div>
-    <div class="cyber-controls">
-      <button id="musicToggle" class="cyber-button small">
-        <span class="glow-text">🔊 AUDIO: ACTIVE</span>
-      </button>
-    </div>
-  </div>
-
-  <div id="game-ui" style="display: none;">
-    <!-- Header Bar -->
-    <div class="cyber-header">
-      <div class="cyber-logo-small">CLOAKER</div>
-      <div class="cyber-stats">
-        <div class="stat-item" id="scoreDisplay">
-          <div class="stat-value" id="scoreValue">0</div>
-          <div class="stat-label">PRIVACY</div>
+<body>
+    <!-- Orientation Warning -->
+    <div id="orientation-warning">
+        <div class="warning-content">
+            <h1>🔄 Please Rotate Your Device</h1>
+            <p>This game requires landscape mode for the best experience</p>
+            <div class="phone-icon">📱</div>
         </div>
-        <div class="stat-item" id="levelDisplay">
-          <div class="stat-value" id="levelValue">1</div>
-          <div class="stat-label">NETWORK LVL</div>
+    </div>
+
+    <!-- Main Game Container -->
+    <div id="game-container">
+        <!-- Mario-style UI Header -->
+        <div id="game-header">
+            <div class="ui-panel">
+                <div class="ui-element">
+                    <span>LEVEL</span>
+                    <div id="levelValue" class="value">1</div>
+                </div>
+                <div class="ui-element">
+                    <span>COINS</span>
+                    <div id="coinValue" class="value">0</div>
+                </div>
+                <div class="ui-element">
+                    <span>SCORE</span>
+                    <div id="scoreValue" class="value">0</div>
+                </div>
+                <div class="ui-element lives">
+                    <span>LIVES</span>
+                    <div id="livesValue" class="value">3</div>
+                </div>
+            </div>
         </div>
-        <div class="stat-item" id="coinDisplay">
-          <div class="stat-value" id="coinValue">0</div>
-          <div class="stat-label">CLOAK COINS</div>
+
+        <!-- Game Content -->
+        <div id="game-content">
+            <!-- Main Menu -->
+            <div id="main-menu" class="screen">
+                <h1 class="game-title">BLOCKCHAIN ESCAPE</h1>
+                <div class="menu-options">
+                    <button class="menu-button" onclick="startGame('hider')">NEW GAME</button>
+                    <button class="menu-button" id="musicToggle">🔊 AUDIO: ON</button>
+                    <button class="menu-button" onclick="toggleInstructions()">HOW TO PLAY</button>
+                </div>
+            </div>
+
+            <!-- Game UI -->
+            <div id="game-ui" class="screen" style="display: none;">
+                <div id="map-container"></div>
+                
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <button class="action-btn" onclick="useCloaking()">🕶️ CLOAK</button>
+                    <button class="action-btn" onclick="plantDecoyData()">📡 DECOY</button>
+                    <button class="action-btn" onclick="enterDarkWebMarket()">🛒 MARKET</button>
+                    <button class="action-btn" onclick="openUpgradeMenu()">⚡ UPGRADE</button>
+                    <button class="action-btn" onclick="togglePause()">⏸️ PAUSE</button>
+                </div>
+                
+                <!-- Game Log -->
+                <div id="log" class="game-log"></div>
+            </div>
+
+            <!-- Modals -->
+            <div id="winModal" class="modal">
+                <div class="modal-content mario-modal">
+                    <h2>LEVEL COMPLETE!</h2>
+                    <p id="coinsEarned">+10 coins earned</p>
+                    <button onclick="closeModals()">CONTINUE</button>
+                </div>
+            </div>
+
+            <div id="loseModal" class="modal">
+                <div class="modal-content mario-modal">
+                    <h2>GAME OVER!</h2>
+                    <p>Caught by <span id="caughtByEnemy">Chainalysis</span></p>
+                    <p><span id="detectionMethod">Cluster Analysis</span></p>
+                    <div class="button-group">
+                        <button onclick="newGame()">TRY AGAIN</button>
+                        <button onclick="returnToMainMenu()">MAIN MENU</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="pauseModal" class="modal">
+                <div class="modal-content mario-modal">
+                    <h2>PAUSED</h2>
+                    <div class="button-group">
+                        <button onclick="togglePause()">RESUME</button>
+                        <button onclick="returnToMainMenu()">MAIN MENU</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="upgradeModal" class="modal">
+                <div class="modal-content mario-modal">
+                    <h2>UPGRADES</h2>
+                    <div id="upgrade-list"></div>
+                    <button onclick="closeUpgradeMenu()">CLOSE</button>
+                </div>
+            </div>
+
+            <div id="instructionsModal" class="modal">
+                <div class="modal-content mario-modal">
+                    <h2>HOW TO PLAY</h2>
+                    <div class="instructions">
+                        <p>Navigate the blockchain maze as a privacy advocate!</p>
+                        <p>🔼🔽◀️▶️ Move with arrow keys</p>
+                        <p>SPACE: Activate cloaking</p>
+                        <p>D: Plant decoy data</p>
+                        <p>M: Access dark web market</p>
+                        <p>U: Open upgrades</p>
+                        <p>Collect coins, avoid detection, and reach the exit!</p>
+                    </div>
+                    <button onclick="toggleInstructions()">GOT IT!</button>
+                </div>
+            </div>
         </div>
-        <div class="stat-item" id="livesDisplay">
-          <div class="stat-value" id="livesValue">3</div>
-          <div class="stat-label">SHIELDS</div>
-        </div>
-      </div>
     </div>
 
-    <!-- Main Game Area -->
-    <div class="game-grid">
-      <!-- Left Panel - Tools -->
-      <div class="cyber-panel tools-panel">
-        <div class="panel-title">PRIVACY TOOLS</div>
-        <div class="cyber-buttons">
-          <button class="cyber-tool" onclick="useCloaking()">
-            <div class="tool-icon">🕶️</div>
-            <div class="tool-name">CLOAK</div>
-          </button>
-          <button class="cyber-tool" onclick="plantDecoyData()">
-            <div class="tool-icon">🧭</div>
-            <div class="tool-name">DECOY</div>
-          </button>
-          <button class="cyber-tool" onclick="enterDarkWebMarket()">
-            <div class="tool-icon">🛒</div>
-            <div class="tool-name">DARK WEB</div>
-          </button>
-          <button class="cyber-tool" onclick="openUpgradeMenu()">
-            <div class="tool-icon">🔧</div>
-            <div class="tool-name">UPGRADE</div>
-          </button>
-          <button class="cyber-tool" id="pauseBtn" onclick="togglePause()">
-            <div class="tool-icon">⏸️</div>
-            <div class="tool-name">PAUSE</div>
-          </button>
-        </div>
-      </div>
+    <script src="js/game.js"></script>
+    <script>
+        // Check orientation and show warning if needed
+        function checkOrientation() {
+            const warning = document.getElementById('orientation-warning');
+            const gameContainer = document.getElementById('game-container');
+            
+            if (window.innerHeight > window.innerWidth) {
+                warning.style.display = 'flex';
+                gameContainer.style.display = 'none';
+            } else {
+                warning.style.display = 'none';
+                gameContainer.style.display = 'block';
+            }
+        }
 
-      <!-- Center Panel - Game Map -->
-      <div class="cyber-panel main-panel">
-        <div id="map-container" class="cyber-grid"></div>
-      </div>
+        // Toggle instructions modal
+        function toggleInstructions() {
+            const modal = document.getElementById('instructionsModal');
+            if (modal.style.display === 'flex') {
+                modal.style.display = 'none';
+            } else {
+                modal.style.display = 'flex';
+            }
+            playSound('click');
+        }
 
-      <!-- Right Panel - Inventory -->
-      <div class="cyber-panel inventory-panel">
-        <div class="panel-title">INVENTORY</div>
-        <div id="inventory" class="inventory-grid"></div>
-      </div>
-    </div>
-
-    <!-- Bottom Panel - Log and Shop -->
-    <div class="bottom-panels">
-      <div class="cyber-panel log-panel">
-        <div class="panel-title">TRANSACTION LOG</div>
-        <div id="log" class="cyber-log"></div>
-      </div>
-      <div class="cyber-panel shop-panel">
-        <div class="panel-title">PRIVACY MARKET</div>
-        <div id="shop" class="cyber-shop"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modals -->
-  <div id="winModal" class="cyber-modal">
-    <div class="modal-content cyber-glass">
-      <div class="modal-title">TRANSACTION COMPLETE</div>
-      <div class="modal-message">NETWORK COMPROMISED</div>
-      <div id="coinsEarned" class="modal-detail">+10 CLOAK COINS ACQUIRED</div>
-      <button class="cyber-button" onclick="closeModals()">
-        <span class="glow-text">CONTINUE OPERATION</span>
-      </button>
-    </div>
-  </div>
-
-  <div id="loseModal" class="cyber-modal">
-    <div class="modal-content cyber-glass">
-      <div class="modal-title red-glow">DETECTION ALERT</div>
-      <div class="modal-message">PRIVACY BREACHED</div>
-      <div class="modal-detail">TRACED BY <span id="caughtByEnemy" class="red-glow">[...]</span></div>
-      <div id="detectionMethod" class="modal-technical">[...]</div>
-      <div class="modal-buttons">
-        <button class="cyber-button" onclick="newGame()">
-          <span class="glow-text">NEW SESSION</span>
-        </button>
-        <button class="cyber-button" onclick="returnToMainMenu()">
-          <span class="glow-text">TERMINATE</span>
-        </button>
-        <button class="cyber-button" onclick="buyLifeInGameOver()">
-          <span class="glow-text">REBOOT (30 CLOAK COINS)</span>
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Upgrade Modal -->
-  <div id="upgradeModal" class="cyber-modal">
-    <div class="modal-content cyber-glass">
-      <div class="modal-title">PRIVACY UPGRADES</div>
-      <div id="upgrade-list" class="upgrade-grid"></div>
-      <button class="cyber-button" onclick="closeUpgradeMenu()">
-        <span class="glow-text">CLOSE INTERFACE</span>
-      </button>
-    </div>
-  </div>
-
-  <!-- Pause Modal -->
-  <div id="pauseModal" class="cyber-modal">
-    <div class="modal-content cyber-glass">
-      <div class="modal-title">SYSTEM PAUSED</div>
-      <div class="modal-buttons">
-        <button class="cyber-button" onclick="togglePause()">
-          <span class="glow-text">RESUME OPERATION</span>
-        </button>
-        <button class="cyber-button" onclick="resetGame()">
-          <span class="glow-text">RESTART LEVEL</span>
-        </button>
-        <button class="cyber-button" onclick="returnToMainMenu()">
-          <span class="glow-text">TERMINATE SESSION</span>
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Audio Elements -->
-  <audio id="moveSound" src="sounds/move.wav" preload="auto"></audio>
-  <audio id="coinSound" src="sounds/coin.wav" preload="auto"></audio>
-  <audio id="winSound" src="sounds/win.wav" preload="auto"></audio>
-  <audio id="loseSound" src="sounds/lose.wav" preload="auto"></audio>
-  <audio id="powerupSound" src="sounds/powerup.wav" preload="auto"></audio>
-  <audio id="teleportSound" src="sounds/teleport.wav" preload="auto"></audio>
-  <audio id="clickSound" src="sounds/click.wav" preload="auto"></audio>
-  <audio id="cloakSound" src="sounds/cloak.wav" preload="auto"></audio>
-  <audio id="decoySound" src="sounds/decoy.wav" preload="auto"></audio>
-  <audio id="footstep1Sound" src="sounds/footstep1.wav" preload="auto"></audio>
-  <audio id="footstep2Sound" src="sounds/footstep2.wav" preload="auto"></audio>
-  <audio id="backgroundMusic" src="sounds/background.mp3" preload="auto"></audio>
-
-  <script src="game.js"></script>
+        // Initialize orientation check
+        window.addEventListener('load', checkOrientation);
+        window.addEventListener('resize', checkOrientation);
+        
+        // Initialize game when DOM is loaded
+        document.addEventListener('DOMContentLoaded', initGame);
+    </script>
 </body>
 </html>
