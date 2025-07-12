@@ -34,11 +34,11 @@
       <div class="cyber-stats">
         <div class="stat-item" id="scoreDisplay">
           <div class="stat-value" id="scoreValue">0</div>
-          <div class="stat-label">PRIVACY</div>
+          <div class="stat-label"> PRIVACY</div>
         </div>
         <div class="stat-item" id="levelDisplay">
           <div class="stat-value" id="levelValue">1</div>
-          <div class="stat-label">NETWORK LVL</div>
+          <div class="stat-label"> NETWORK LVL</div>
         </div>
         <div class="stat-item" id="coinDisplay">
           <div class="stat-value" id="coinValue">0</div>
@@ -55,23 +55,11 @@
     <div class="game-grid">
       <!-- Left Panel - Tools -->
       <div class="cyber-panel tools-panel">
-        <div class="panel-title">PRIVACY TOOLS</div>
+        <div class="panel-title">BASIC TOOLS</div>
         <div class="cyber-buttons">
-          <button class="cyber-tool" onclick="useCloaking()">
-            <div class="tool-icon">🕶️</div>
-            <div class="tool-name">CLOAK</div>
-          </button>
-          <button class="cyber-tool" onclick="plantDecoyData()">
-            <div class="tool-icon">🧭</div>
-            <div class="tool-name">DECOY</div>
-          </button>
-          <button class="cyber-tool" onclick="enterDarkWebMarket()">
+          <button class="cyber-tool" onclick="openPrivacyToolsMarket()">
             <div class="tool-icon">🛒</div>
-            <div class="tool-name">DARK WEB</div>
-          </button>
-          <button class="cyber-tool" onclick="openUpgradeMenu()">
-            <div class="tool-icon">🔧</div>
-            <div class="tool-name">UPGRADE</div>
+            <div class="tool-name">TOOLS MARKET</div>
           </button>
           <button class="cyber-tool" id="pauseBtn" onclick="togglePause()">
             <div class="tool-icon">⏸️</div>
@@ -99,7 +87,7 @@
         <div id="log" class="cyber-log"></div>
       </div>
       <div class="cyber-panel shop-panel">
-        <div class="panel-title">PRIVACY MARKET</div>
+        <div class="panel-title">ITEM SHOP</div>
         <div id="shop" class="cyber-shop"></div>
       </div>
     </div>
@@ -137,13 +125,13 @@
     </div>
   </div>
 
-  <!-- Upgrade Modal -->
-  <div id="upgradeModal" class="cyber-modal">
+  <!-- Privacy Tools Market Modal -->
+  <div id="privacyToolsModal" class="cyber-modal">
     <div class="modal-content cyber-glass">
-      <div class="modal-title">PRIVACY UPGRADES</div>
-      <div id="upgrade-list" class="upgrade-grid"></div>
-      <button class="cyber-button" onclick="closeUpgradeMenu()">
-        <span class="glow-text">CLOSE INTERFACE</span>
+      <div class="modal-title">PRIVACY TOOLS MARKET</div>
+      <div id="privacy-tools-list" class="upgrade-grid"></div>
+      <button class="cyber-button" onclick="closePrivacyToolsMarket()">
+        <span class="glow-text">CLOSE MARKET</span>
       </button>
     </div>
   </div>
@@ -181,5 +169,78 @@
   <audio id="backgroundMusic" src="sounds/background.mp3" preload="auto"></audio>
 
   <script src="game.js"></script>
+
+<script>
+  // Initialize the game when everything is loaded
+  document.addEventListener('DOMContentLoaded', () => {
+    initGame();
+    
+    // Add tooltips to inventory items
+    document.querySelectorAll('.inventory-item').forEach(item => {
+      item.addEventListener('mouseenter', () => {
+        const tooltip = item.querySelector('.tooltip-inv');
+        if (tooltip) {
+          tooltip.style.visibility = 'visible';
+          tooltip.style.opacity = '1';
+        }
+      });
+      
+      item.addEventListener('mouseleave', () => {
+        const tooltip = item.querySelector('.tooltip-inv');
+        if (tooltip) {
+          tooltip.style.visibility = 'hidden';
+          tooltip.style.opacity = '0';
+        }
+      });
+    });
+
+    // Add swipe support for mobile
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchEndX = 0;
+    let touchEndY = 0;
+
+    document.addEventListener('touchstart', e => {
+      touchStartX = e.changedTouches[0].screenX;
+      touchStartY = e.changedTouches[0].screenY;
+    }, false);
+
+    document.addEventListener('touchend', e => {
+      if (!gameState.session.gameActive || gameState.session.isPaused) return;
+      
+      touchEndX = e.changedTouches[0].screenX;
+      touchEndY = e.changedTouches[0].screenY;
+      
+      const dx = touchEndX - touchStartX;
+      const dy = touchEndY - touchStartY;
+      
+      // Only register swipe if movement is significant
+      if (Math.abs(dx) > 50 || Math.abs(dy) > 50) {
+        const { x, y } = gameState.player.position;
+        
+        if (Math.abs(dx) > Math.abs(dy)) {
+          // Horizontal swipe
+          if (dx > 0) {
+            // Right swipe
+            if (x < gameState.level.mapSize - 1) movePlayer(x + 1, y);
+          } else {
+            // Left swipe
+            if (x > 0) movePlayer(x - 1, y);
+          }
+        } else {
+          // Vertical swipe
+          if (dy > 0) {
+            // Down swipe
+            if (y < gameState.level.mapSize - 1) movePlayer(x, y + 1);
+          } else {
+            // Up swipe
+            if (y > 0) movePlayer(x, y - 1);
+          }
+        }
+      }
+    }, false);
+  });
+</script>
+
 </body>
 </html>

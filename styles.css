@@ -235,7 +235,7 @@ body {
 /* Map Container */
 #map-container {
   display: grid;
-  grid-gap: 4px;
+  grid-gap: 1px;
   background: rgba(0, 0, 0, 0.3);
   padding: 10px;
   border-radius: 4px;
@@ -299,6 +299,12 @@ body {
   animation: pulse 1s infinite;
 }
 
+.portal {
+  background: radial-gradient(circle, var(--accent-blue), rgba(0, 100, 200, 0.6)) !important;
+  box-shadow: 0 0 10px var(--accent-blue);
+  animation: pulse 0.8s infinite;
+}
+
 /* Tool Buttons */
 .cyber-buttons {
   display: flex;
@@ -316,6 +322,7 @@ body {
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s;
+  color: Skyblue;
 }
 
 .cyber-tool:hover {
@@ -350,11 +357,17 @@ body {
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s;
+  position: relative;
 }
 
 .inventory-item:hover {
   background: rgba(0, 240, 255, 0.1);
   box-shadow: 0 0 5px var(--primary);
+}
+
+.inventory-icon {
+  font-size: 1.5rem;
+  margin-bottom: 5px;
 }
 
 /* Shop */
@@ -379,6 +392,11 @@ body {
 .shop-item:hover {
   background: rgba(0, 240, 255, 0.1);
   box-shadow: 0 0 5px var(--primary);
+}
+
+.shop-icon {
+  font-size: 1.5rem;
+  margin-bottom: 5px;
 }
 
 /* Log */
@@ -409,15 +427,28 @@ body {
   align-items: center;
 }
 
+.cyber-modal::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+}
+
 .modal-content {
   width: 90%;
-  max-width: 400px;
+  max-width: 500px;
+  max-height: 80vh;
+  overflow-y: auto;
   padding: 30px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 20px;
   border-radius: 8px;
+  position: relative;
 }
 
 .modal-title {
@@ -462,10 +493,10 @@ body {
   text-shadow: 0 0 5px var(--accent-red);
 }
 
-/* Upgrade Grid */
-.upgrade-grid {
-  display: flex;
-  flex-direction: column;
+/* Privacy Tools Market Grid */
+#privacy-tools-list {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
   gap: 10px;
   width: 100%;
   margin-bottom: 20px;
@@ -479,11 +510,16 @@ body {
   background: rgba(10, 20, 40, 0.5);
   border: 1px solid rgba(0, 240, 255, 0.2);
   border-radius: 4px;
+  min-width: 0;
 }
 
 .upgrade-item strong {
   font-family: 'Orbitron', sans-serif;
   color: var(--primary);
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .upgrade-item span {
@@ -512,7 +548,111 @@ body {
   100% { box-shadow: 0 0 5px var(--accent-green); }
 }
 
+/* New Visual Feedback Elements */
+.detection-meter {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  width: calc(100% - 20px);
+  height: 5px;
+  background: rgba(255, 0, 68, 0.2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.detection-level {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--accent-red), var(--secondary));
+  transition: width 0.3s ease;
+}
+
+.particle-effect {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 20;
+}
+
+.particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--primary);
+  opacity: 0.7;
+}
+
+/* Animation for cloaking */
+@keyframes cloakPulse {
+  0% { opacity: 0.7; transform: scale(1); }
+  50% { opacity: 0.3; transform: scale(1.1); }
+  100% { opacity: 0.7; transform: scale(1); }
+}
+
+.cloaking-active {
+  animation: cloakPulse 1.5s infinite;
+}
+
+/* New state classes */
+.high-alert {
+  box-shadow: 0 0 15px var(--accent-red);
+}
+
+.low-profile {
+  box-shadow: 0 0 10px var(--accent-green);
+}
+
+/* Tooltip enhancements */
+.tooltip-inv {
+  visibility: hidden;
+  width: 120px;
+  background-color: var(--bg-dark);
+  color: var(--text-primary);
+  text-align: center;
+  border-radius: 6px;
+  padding: 5px;
+  position: absolute;
+  z-index: 1;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  transition: opacity 0.3s;
+  border: 1px solid var(--glass-border);
+}
+
+.inventory-item:hover .tooltip-inv {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Cooldown indicator */
+.cooldown {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: rgba(0, 240, 255, 0.5);
+  transform-origin: left;
+  transform: scaleX(0);
+}
+
 /* Responsive Design */
+@media (max-width: 1200px) {
+  #privacy-tools-list {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  #privacy-tools-list {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
 @media (max-width: 768px) {
   .game-grid {
     grid-template-columns: 1fr;
@@ -543,6 +683,10 @@ body {
     height: 40px;
     font-size: 16px;
   }
+
+  #privacy-tools-list {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 480px) {
@@ -563,5 +707,147 @@ body {
     width: 30px;
     height: 30px;
     font-size: 14px;
+  }
+
+  .cyber-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    margin-bottom: 10px;
+  }
+
+  .cyber-stats {
+    display: flex;
+    gap: 5px;
+    justify-items: center;
+  }
+
+  .stat-item {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    min-width: 50px;
+    padding: 2px 4px;
+    background: rgba(10, 20, 30, 0.5);
+    border-radius: 4px;
+    border: 1px solid rgba(0, 240, 255, 0.2);
+  }
+
+  .stat-value {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 16px;
+    color: var(--primary);
+    margin-bottom: 2px;
+  }
+
+  .stat-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+    margin-left: 1px;
+  }
+
+  /* Log */
+  .cyber-log {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(0, 240, 255, 0.1);
+    border-radius: 12px;
+    padding: 6px;
+    height: 50px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  /* Tool Buttons */
+  .cyber-buttons {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    position: relative;
+  }
+
+  .cyber-tool {
+    display: flex;
+    align-items: center;
+    width: 60px;
+    gap: 4px;
+    padding: 4px 4px; 
+    background: rgba(20, 30, 50, 0.5);
+    border: 1px solid rgba(0, 240, 255, 0.2);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: Skyblue;
+  }
+
+  .cyber-tool:hover {
+    background: rgba(0, 240, 255, 0.1);
+    box-shadow: 0 0 5px var(--primary);
+  }
+
+  .tool-icon {
+    font-size: 14px;
+  }
+
+  .tool-name {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    width:100%;
+  }
+
+  /* Map Container */
+  #map-container {
+    display: grid;
+    grid-gap: 3px;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 4px;
+    border-radius: 4px;
+    width: 100%;
+    height: 100%;
+  }
+
+  .tile {
+    width: 50px;
+    height: 50px;
+    background: rgba(30, 40, 60, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 35px;
+    position: relative;
+    transition: all 0.2s;
+    border: 1px solid rgba(100, 200, 255, 0.1);
+  }
+
+  .tile:hover {
+    background: rgba(50, 70, 100, 0.5);
+    transform: scale(1.05);
+  }
+
+  .detection-meter {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    width: calc(100% - 20px);
+    height: 4px;
+    background: rgba(255, 0, 68, 0.2);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .detection-level {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--accent-red), var(--secondary));
+    transition: width 0.3s ease;
+  }
+
+  #privacy-tools-list {
+    grid-template-columns: 1fr;
   }
 }

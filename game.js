@@ -1,33 +1,62 @@
-// Game State Management
+// =============================================
+// Game State Management - Refactored Structure
+// =============================================
+
 const gameState = {
-  currentRole: null,
-  mapSize: 5, // Starting size (will increase with levels)
-  hiderPosition: { x: 0, y: 0 },
-  seekerPositions: [],
-  goalPosition: { x: 2, y: 2 },
-  score: 0,
-  level: 1,
-  coins: 0,
-  lives: 3,
-  inventory: [],
-  activeEffects: [],
-  cloakingAvailable: true,
-  decoyPlanted: false,
-  torTrailActive: false,
-  aiMoveInterval: null,
-  timers: {},
-  gameActive: false,
-  isPaused: false,
-  specialTiles: {
-    firewalls: [],
-    dataNodes: [],
-    teleports: []
+  // Player State
+  player: {
+    role: null,
+    position: { x: 0, y: 0 },
+    stats: {
+      cloaking: 1,
+      speed: 1,
+      stealth: 1
+    },
+    inventory: [],
+    ownedTools: {},
+    activeEffects: [],
+    coins: 0,
+    lives: 3,
+    score: 0
   },
-  musicEnabled: true,
-  lastStepTime: 0
+
+  // Level State
+  level: {
+    current: 1,
+    mapSize: 6, // Fixed 6x6 grid
+    goalPosition: { x: 2, y: 2 },
+    specialTiles: {
+      firewalls: [],
+      dataNodes: [],
+      teleports: [],
+      portals: []
+    },
+    detectionRisk: 0
+  },
+
+  // Game State
+  session: {
+    gameActive: false,
+    isPaused: false,
+    musicEnabled: true,
+    lastStepTime: 0,
+    aiMoveInterval: null,
+    timers: {}
+  },
+
+  // AI State
+  ai: {
+    seekers: [],
+    speed: 3000,
+    intelligence: 1,
+    detectionRange: 3
+  }
 };
 
+// =============================================
 // Audio Elements
+// =============================================
+
 const sounds = {
   move: document.getElementById("moveSound"),
   coin: document.getElementById("coinSound"),
@@ -43,7 +72,10 @@ const sounds = {
   background: document.getElementById("backgroundMusic")
 };
 
+// =============================================
 // Tool Stats
+// =============================================
+
 const toolStats = {
   cloaking: { 
     name: "Cloaking", 
@@ -53,7 +85,8 @@ const toolStats = {
     duration: 8, 
     costBase: 15, 
     costInc: 8,
-    cooldown: 25
+    cooldown: 25,
+    owned: false
   },
   decoy: { 
     name: "Decoy", 
@@ -63,7 +96,8 @@ const toolStats = {
     duration: 12, 
     costBase: 15, 
     costInc: 8,
-    cooldown: 30
+    cooldown: 30,
+    owned: false
   },
   torTrail: { 
     name: "Tor Trail", 
@@ -74,7 +108,8 @@ const toolStats = {
     costBase: 20, 
     costInc: 10,
     duration: 8,
-    cooldown: 35
+    cooldown: 35,
+    owned: false
   },
   vpn: { 
     name: "VPN", 
@@ -84,7 +119,8 @@ const toolStats = {
     duration: 6, 
     costBase: 12, 
     costInc: 6,
-    cooldown: 20
+    cooldown: 20,
+    owned: false
   },
   ccCleaner: { 
     name: "CC Cleaner", 
@@ -94,11 +130,15 @@ const toolStats = {
     power: 1, 
     costBase: 25, 
     costInc: 12,
-    cooldown: 25
+    cooldown: 25,
+    owned: false
   }
 };
 
+// =============================================
 // Shop Items
+// =============================================
+
 const shopItems = [
   { 
     name: "Bootable USB", 
@@ -106,27 +146,6 @@ const shopItems = [
     desc: "Reveals the goal location for 3 seconds.", 
     cost: 15, 
     action: useUSBAdapter 
-  },
-  { 
-    name: "Tor Trail", 
-    icon: "🌀", 
-    desc: "Allows diagonal movement for 8 seconds.", 
-    cost: 20, 
-    action: useTorTrail 
-  },
-  { 
-    name: "CC Cleaner", 
-    icon: "🧯", 
-    desc: "Randomly teleports all enemies.", 
-    cost: 25, 
-    action: useCCCleanser 
-  },
-  { 
-    name: "VPN", 
-    icon: "🛡️", 
-    desc: "6 seconds of invisibility with 20s cooldown.", 
-    cost: 12, 
-    action: useVPN 
   },
   { 
     name: "Extra Life", 
@@ -137,7 +156,10 @@ const shopItems = [
   }
 ];
 
-// Enemies and detection methods
+// =============================================
+// Enemies and Detection Methods
+// =============================================
+
 const enemyList = [
   "Chainalys", "Elliptic", "Cypher Trace", "Nansen", "Arkam Intelligence",
   "AnchainAI", "BlockSeer", "Blockchair", "Breadcrumbs", "Whale Alert",
@@ -151,35 +173,40 @@ const detectionMethods = [
   "Exchange & KYC Leaks – Correlates leaks with blockchain."
 ];
 
+// =============================================
 // DOM Elements
+// =============================================
+
 const mapContainer = document.getElementById("map-container");
 const logBox = document.getElementById("log");
 
-// Play sound effect
-function playSound(soundName, volume = 0.7) {
-  if (sounds[soundName]) {
-    sounds[soundName].volume = volume;
-    sounds[soundName].currentTime = 0;
-    sounds[soundName].play().catch(e => console.log("Audio play failed:", e));
-  }
-}
+// =============================================
+// Event System
+// =============================================
 
-// Toggle background music
-function toggleMusic() {
-  gameState.musicEnabled = !gameState.musicEnabled;
-  if (gameState.musicEnabled) {
-    sounds.background.loop = true;
-    sounds.background.volume = 0.3;
-    sounds.background.play();
-    document.getElementById("musicToggle").innerHTML = '<span class="glow-text">🔊 AUDIO: ACTIVE</span>';
-  } else {
-    sounds.background.pause();
-    document.getElementById("musicToggle").innerHTML = '<span class="glow-text">🔇 AUDIO: MUTED</span>';
+const events = {
+  listeners: {},
+  
+  on(event, callback) {
+    if (!this.listeners[event]) this.listeners[event] = [];
+    this.listeners[event].push(callback);
+  },
+  
+  emit(event, data) {
+    if (this.listeners[event]) {
+      this.listeners[event].forEach(cb => cb(data));
+    }
   }
-}
+};
 
-// Initialize the game
+// =============================================
+// Core Game Functions
+// =============================================
+
 function initGame() {
+  initEventListeners();
+  
+  // Initialize displays
   updateScoreDisplay(0);
   updateLevelDisplay(1);
   updateCoinsDisplay(0);
@@ -196,119 +223,96 @@ function initGame() {
 
   // Initialize music toggle
   document.getElementById("musicToggle").addEventListener('click', toggleMusic);
-  if (gameState.musicEnabled) {
+  if (gameState.session.musicEnabled) {
     sounds.background.loop = true;
     sounds.background.volume = 0.3;
     sounds.background.play();
   }
-}
-
-// Generate special tiles for the map
-function generateSpecialTiles() {
-  gameState.specialTiles = {
-    firewalls: [],
-    dataNodes: [],
-    teleports: []
-  };
-
-  const mapArea = gameState.mapSize * gameState.mapSize;
   
-  // Generate firewalls (10-20% of map)
-  const firewallCount = Math.floor(mapArea * (0.1 + Math.random() * 0.1));
-  for (let i = 0; i < firewallCount; i++) {
-    let x, y;
-    do {
-      x = Math.floor(Math.random() * gameState.mapSize);
-      y = Math.floor(Math.random() * gameState.mapSize);
-    } while (
-      (x === gameState.hiderPosition.x && y === gameState.hiderPosition.y) ||
-      (x === gameState.goalPosition.x && y === gameState.goalPosition.y) ||
-      gameState.specialTiles.firewalls.some(t => t.x === x && t.y === y)
-    );
-    gameState.specialTiles.firewalls.push({ x, y });
-  }
-
-  // Generate data nodes (5-10% of map)
-  const dataNodeCount = Math.floor(mapArea * (0.05 + Math.random() * 0.05));
-  for (let i = 0; i < dataNodeCount; i++) {
-    let x, y;
-    do {
-      x = Math.floor(Math.random() * gameState.mapSize);
-      y = Math.floor(Math.random() * gameState.mapSize);
-    } while (
-      (x === gameState.hiderPosition.x && y === gameState.hiderPosition.y) ||
-      (x === gameState.goalPosition.x && y === gameState.goalPosition.y) ||
-      gameState.specialTiles.dataNodes.some(t => t.x === x && t.y === y) ||
-      gameState.specialTiles.firewalls.some(t => t.x === x && t.y === y)
-    );
-    gameState.specialTiles.dataNodes.push({ x, y });
-  }
-
-  // Generate teleport pairs (1-3 pairs)
-  const teleportPairCount = 1 + Math.floor(Math.random() * 2);
-  for (let i = 0; i < teleportPairCount; i++) {
-    // First teleport pad
-    let x1, y1;
-    do {
-      x1 = Math.floor(Math.random() * gameState.mapSize);
-      y1 = Math.floor(Math.random() * gameState.mapSize);
-    } while (
-      (x1 === gameState.hiderPosition.x && y1 === gameState.hiderPosition.y) ||
-      (x1 === gameState.goalPosition.x && y1 === gameState.goalPosition.y) ||
-      gameState.specialTiles.teleports.some(t => t.x === x1 && t.y === y1) ||
-      gameState.specialTiles.firewalls.some(t => t.x === x1 && t.y === y1)
-    );
-
-    // Second teleport pad
-    let x2, y2;
-    do {
-      x2 = Math.floor(Math.random() * gameState.mapSize);
-      y2 = Math.floor(Math.random() * gameState.mapSize);
-    } while (
-      (x2 === gameState.hiderPosition.x && y2 === gameState.hiderPosition.y) ||
-      (x2 === gameState.goalPosition.x && y2 === gameState.goalPosition.y) ||
-      (x2 === x1 && y2 === y1) ||
-      gameState.specialTiles.teleports.some(t => t.x === x2 && t.y === y2) ||
-      gameState.specialTiles.firewalls.some(t => t.x === x2 && t.y === y2)
-    );
-
-    gameState.specialTiles.teleports.push(
-      { x: x1, y: y1, pair: i },
-      { x: x2, y: y2, pair: i }
-    );
+  // Add detection meter to UI
+  const gameUI = document.getElementById("game-ui");
+  if (gameUI) {
+    const meter = document.createElement('div');
+    meter.className = 'detection-meter';
+    meter.innerHTML = '<div class="detection-level"></div>';
+    gameUI.appendChild(meter);
   }
 }
 
-// Handle keyboard input
+function initEventListeners() {
+  events.on('player-moved', (position) => {
+    updateDetectionMeter();
+    checkTileEffects(position.x, position.y);
+  });
+
+  events.on('ai-move', () => {
+    updateDetectionMeter();
+    checkCaught();
+    updatePortals();
+  });
+
+  events.on('cloak-used', () => {
+    createParticles(gameState.player.position, 15, 'var(--primary)');
+    gameState.level.detectionRisk = 0;
+    updateDetectionMeter();
+  });
+
+  events.on('decoy-used', () => {
+    createParticles(gameState.player.position, 25, 'var(--secondary)');
+  });
+}
+
+function playSound(soundName, volume = 0.7) {
+  if (sounds[soundName]) {
+    sounds[soundName].volume = volume;
+    sounds[soundName].currentTime = 0;
+    sounds[soundName].play().catch(e => console.log("Audio play failed:", e));
+  }
+}
+
+function toggleMusic() {
+  gameState.session.musicEnabled = !gameState.session.musicEnabled;
+  if (gameState.session.musicEnabled) {
+    sounds.background.loop = true;
+    sounds.background.volume = 0.3;
+    sounds.background.play();
+    document.getElementById("musicToggle").innerHTML = '<span class="glow-text">🔊 AUDIO: ACTIVE</span>';
+  } else {
+    sounds.background.pause();
+    document.getElementById("musicToggle").innerHTML = '<span class="glow-text">🔇 AUDIO: MUTED</span>';
+  }
+}
+
+// =============================================
+// Game Logic Functions
+// =============================================
+
 function handleKeyPress(e) {
-  if (!gameState.gameActive || gameState.isPaused) return;
+  if (!gameState.session.gameActive || gameState.session.isPaused) return;
   
-  const { x, y } = gameState.hiderPosition;
+  const { x, y } = gameState.player.position;
   
   switch(e.key) {
     case 'ArrowUp':
       if (y > 0) movePlayer(x, y - 1);
       break;
     case 'ArrowDown':
-      if (y < gameState.mapSize - 1) movePlayer(x, y + 1);
+      if (y < gameState.level.mapSize - 1) movePlayer(x, y + 1);
       break;
     case 'ArrowLeft':
       if (x > 0) movePlayer(x - 1, y);
       break;
     case 'ArrowRight':
-      if (x < gameState.mapSize - 1) movePlayer(x + 1, y);
+      if (x < gameState.level.mapSize - 1) movePlayer(x + 1, y);
       break;
     case ' ':
-      useCloaking();
+      if (gameState.player.ownedTools.cloaking) useCloaking();
       break;
     case 'd':
-      plantDecoyData();
+      if (gameState.player.ownedTools.decoy) plantDecoyData();
       break;
     case 'm':
-      enterDarkWebMarket();
-      break;
-    case 'u':
-      openUpgradeMenu();
+      openPrivacyToolsMarket();
       break;
     case 'p':
       togglePause();
@@ -319,53 +323,58 @@ function handleKeyPress(e) {
   }
 }
 
-// Toggle pause state
 function togglePause() {
-  gameState.isPaused = !gameState.isPaused;
+  gameState.session.isPaused = !gameState.session.isPaused;
   
-  if (gameState.isPaused) {
-    clearInterval(gameState.aiMoveInterval);
+  if (gameState.session.isPaused) {
+    clearInterval(gameState.session.aiMoveInterval);
     document.getElementById("pauseModal").style.display = "flex";
     logAction("⏸️ Game paused");
     sounds.background.pause();
   } else {
-    // Restart AI movement with current speed
-    const aiSpeed = getSeekerSpeed();
-    gameState.aiMoveInterval = setInterval(moveSeekerAI, aiSpeed);
+    gameState.session.aiMoveInterval = setInterval(moveSeekerAI, gameState.ai.speed);
     document.getElementById("pauseModal").style.display = "none";
     logAction("▶️ Game resumed");
-    if (gameState.musicEnabled) sounds.background.play();
+    if (gameState.session.musicEnabled) sounds.background.play();
   }
 }
 
-// Get seeker speed based on level
-function getSeekerSpeed() {
-  if (gameState.level <= 9) return 3000; // 3 seconds
-  if (gameState.level <= 30) return 2000; // 2 seconds
-  return 1000; // 1 second for levels 30+
-}
-
-// Return to main menu
 function returnToMainMenu() {
   closeModals();
-  gameState.gameActive = false;
-  clearInterval(gameState.aiMoveInterval);
+  gameState.session.gameActive = false;
+  clearInterval(gameState.session.aiMoveInterval);
   document.getElementById("game-ui").style.display = "none";
   document.getElementById("main-menu").style.display = "flex";
-  gameState.isPaused = false;
+  gameState.session.isPaused = false;
   sounds.background.pause();
 }
 
-// Start a completely new game
 function newGame() {
   // Reset all game state
-  gameState.currentRole = 'hider';
-  gameState.score = 0;
-  gameState.level = 1;
-  gameState.coins = 0;
-  gameState.lives = 3;
-  gameState.inventory = [];
-  gameState.activeEffects = [];
+  gameState.player = {
+    role: 'hider',
+    position: { x: 0, y: 0 },
+    stats: { cloaking: 1, speed: 1, stealth: 1 },
+    inventory: [],
+    ownedTools: {},
+    activeEffects: [],
+    coins: 0,
+    lives: 3,
+    score: 0
+  };
+  
+  gameState.level = {
+    current: 1,
+    mapSize: 6,
+    goalPosition: { x: 2, y: 2 },
+    specialTiles: { firewalls: [], dataNodes: [], teleports: [], portals: [] },
+    detectionRisk: 0
+  };
+  
+  // Reset tool ownership
+  Object.keys(toolStats).forEach(tool => {
+    toolStats[tool].owned = false;
+  });
   
   // Update displays
   updateScoreDisplay(0);
@@ -379,17 +388,16 @@ function newGame() {
   // Close modals and start fresh
   closeModals();
   resetGame();
-  if (gameState.musicEnabled) sounds.background.play();
+  if (gameState.session.musicEnabled) sounds.background.play();
 }
 
-// Buy life in game over modal
 function buyLifeInGameOver() {
   const cost = 30;
-  if (gameState.coins >= cost) {
-    gameState.coins -= cost;
-    gameState.lives++;
-    updateCoinsDisplay(gameState.coins);
-    updateLivesDisplay(gameState.lives);
+  if (gameState.player.coins >= cost) {
+    gameState.player.coins -= cost;
+    gameState.player.lives++;
+    updateCoinsDisplay(gameState.player.coins);
+    updateLivesDisplay(gameState.player.lives);
     logAction("❤️ Bought extra life!");
     playSound('powerup');
     closeModals();
@@ -400,126 +408,1051 @@ function buyLifeInGameOver() {
   }
 }
 
-// Add extra life
 function addLife() {
-  gameState.lives++;
-  updateLivesDisplay(gameState.lives);
+  gameState.player.lives++;
+  updateLivesDisplay(gameState.player.lives);
   logAction("❤️ Gained an extra life!");
   playSound('powerup');
 }
 
-// Start the game with selected role
 function startGame(role) {
-  gameState.currentRole = role;
-  gameState.gameActive = true;
-  gameState.lives = 3;
-  gameState.level = 1;
-  gameState.mapSize = 5; // Reset to starting size
+  gameState.player.role = role;
+  gameState.session.gameActive = true;
+  gameState.player.lives = 3;
+  gameState.level.current = 1;
+  gameState.level.mapSize = 6;
   document.getElementById("main-menu").style.display = "none";
   document.getElementById("game-ui").style.display = "flex";
 
   resetGame();
   initInventory();
-  if (gameState.musicEnabled) sounds.background.play();
+  if (gameState.session.musicEnabled) sounds.background.play();
 }
 
-// Update score display
+// =============================================
+// Display Update Functions
+// =============================================
+
 function updateScoreDisplay(newScore) {
-  gameState.score = newScore;
+  gameState.player.score = newScore;
   const scoreValue = document.getElementById("scoreValue");
-  if (scoreValue) {
-    scoreValue.textContent = newScore;
-  }
+  if (scoreValue) scoreValue.textContent = newScore;
 }
 
-// Update level display
 function updateLevelDisplay(newLevel) {
-  gameState.level = newLevel;
+  gameState.level.current = newLevel;
   const levelValue = document.getElementById("levelValue");
-  if (levelValue) {
-    levelValue.textContent = newLevel;
-  }
+  if (levelValue) levelValue.textContent = newLevel;
 }
 
-// Update coins display
 function updateCoinsDisplay(amount) {
-  gameState.coins = amount;
+  gameState.player.coins = amount;
   const coinValue = document.getElementById("coinValue");
-  if (coinValue) {
-    coinValue.textContent = amount;
-  }
+  if (coinValue) coinValue.textContent = amount;
 }
 
-// Update lives display
 function updateLivesDisplay(lives) {
-  gameState.lives = lives;
+  gameState.player.lives = lives;
   const livesValue = document.getElementById("livesValue");
-  if (livesValue) {
-    livesValue.textContent = lives;
+  if (livesValue) livesValue.textContent = lives;
+}
+
+// =============================================
+// Map and Movement Functions
+// =============================================
+
+function generateSpecialTiles() {
+  gameState.level.specialTiles = {
+    firewalls: [],
+    dataNodes: [],
+    teleports: [],
+    portals: []
+  };
+
+  const mapArea = gameState.level.mapSize * gameState.level.mapSize;
+  
+  // Generate firewalls (10-15% of map)
+  const firewallCount = Math.min(5, Math.floor(mapArea * (0.1 + Math.random() * 0.05)));
+  for (let i = 0; i < firewallCount; i++) {
+    let x, y;
+    let attempts = 0;
+    const maxAttempts = 50;
+    
+    do {
+      x = Math.floor(Math.random() * gameState.level.mapSize);
+      y = Math.floor(Math.random() * gameState.level.mapSize);
+      attempts++;
+      
+      if (attempts >= maxAttempts) break;
+    } while (
+      (x === gameState.player.position.x && y === gameState.player.position.y) ||
+      (x === gameState.level.goalPosition.x && y === gameState.level.goalPosition.y) ||
+      gameState.level.specialTiles.firewalls.some(t => t.x === x && t.y === y) ||
+      gameState.ai.seekers.some(s => s.x === x && s.y === y)
+    );
+    
+    if (attempts < maxAttempts) {
+      gameState.level.specialTiles.firewalls.push({ x, y });
+    }
+  }
+
+  // Generate data nodes (5-8% of map)
+  const dataNodeCount = Math.min(3, Math.floor(mapArea * (0.05 + Math.random() * 0.03)));
+  for (let i = 0; i < dataNodeCount; i++) {
+    let x, y;
+    let attempts = 0;
+    const maxAttempts = 50;
+    
+    do {
+      x = Math.floor(Math.random() * gameState.level.mapSize);
+      y = Math.floor(Math.random() * gameState.level.mapSize);
+      attempts++;
+      
+      if (attempts >= maxAttempts) break;
+    } while (
+      (x === gameState.player.position.x && y === gameState.player.position.y) ||
+      (x === gameState.level.goalPosition.x && y === gameState.level.goalPosition.y) ||
+      gameState.level.specialTiles.dataNodes.some(t => t.x === x && t.y === y) ||
+      gameState.level.specialTiles.firewalls.some(t => t.x === x && t.y === y) ||
+      gameState.ai.seekers.some(s => s.x === x && s.y === y)
+    );
+    
+    if (attempts < maxAttempts) {
+      gameState.level.specialTiles.dataNodes.push({ x, y });
+    }
+  }
+
+  // Generate teleport pairs (1-2 pairs)
+  const teleportPairCount = 1 + Math.floor(Math.random() * 1);
+  for (let i = 0; i < teleportPairCount; i++) {
+    // First teleport pad
+    let x1, y1;
+    let attempts1 = 0;
+    const maxAttempts = 50;
+    
+    do {
+      x1 = Math.floor(Math.random() * gameState.level.mapSize);
+      y1 = Math.floor(Math.random() * gameState.level.mapSize);
+      attempts1++;
+      
+      if (attempts1 >= maxAttempts) break;
+    } while (
+      (x1 === gameState.player.position.x && y1 === gameState.player.position.y) ||
+      (x1 === gameState.level.goalPosition.x && y1 === gameState.level.goalPosition.y) ||
+      gameState.level.specialTiles.teleports.some(t => t.x === x1 && t.y === y1) ||
+      gameState.level.specialTiles.firewalls.some(t => t.x === x1 && t.y === y1) ||
+      gameState.level.specialTiles.dataNodes.some(t => t.x === x1 && t.y === y1) ||
+      gameState.ai.seekers.some(s => s.x === x1 && s.y === y1)
+    );
+
+    // Second teleport pad
+    let x2, y2;
+    let attempts2 = 0;
+    
+    do {
+      x2 = Math.floor(Math.random() * gameState.level.mapSize);
+      y2 = Math.floor(Math.random() * gameState.level.mapSize);
+      attempts2++;
+      
+      if (attempts2 >= maxAttempts) break;
+    } while (
+      (x2 === gameState.player.position.x && y2 === gameState.player.position.y) ||
+      (x2 === gameState.level.goalPosition.x && y2 === gameState.level.goalPosition.y) ||
+      (x2 === x1 && y2 === y1) ||
+      gameState.level.specialTiles.teleports.some(t => t.x === x2 && t.y === y2) ||
+      gameState.level.specialTiles.firewalls.some(t => t.x === x2 && t.y === y2) ||
+      gameState.level.specialTiles.dataNodes.some(t => t.x === x2 && t.y === y2) ||
+      gameState.ai.seekers.some(s => s.x === x2 && s.y === y2) ||
+      calculateDistance({x: x1, y: y1}, {x: x2, y: y2}) < 3 // Ensure teleport pairs aren't too close
+    );
+
+    if (attempts1 < maxAttempts && attempts2 < maxAttempts) {
+      gameState.level.specialTiles.teleports.push(
+        { x: x1, y: y1, pair: i },
+        { x: x2, y: y2, pair: i }
+      );
+    }
   }
 }
 
-// Open upgrade menu
-function openUpgradeMenu() {
-  if (gameState.isPaused) return;
-  const modal = document.getElementById("upgradeModal");
-  modal.style.display = "flex";
-  const list = document.getElementById("upgrade-list");
-  list.innerHTML = '';
+function updatePortals() {
+  // Clear existing portals
+  gameState.level.specialTiles.portals = [];
+  
+  // Add portals near seekers (25% chance per seeker)
+  gameState.ai.seekers.forEach(seeker => {
+    if (Math.random() < 0.25) {
+      const directions = [
+        {x: 1, y: 0}, {x: -1, y: 0}, {x: 0, y: 1}, {x: 0, y: -1}
+      ];
+      
+      const validDirections = directions.filter(dir => {
+        const x = seeker.x + dir.x;
+        const y = seeker.y + dir.y;
+        return x >= 0 && x < gameState.level.mapSize && 
+               y >= 0 && y < gameState.level.mapSize &&
+               !gameState.level.specialTiles.firewalls.some(f => f.x === x && f.y === y) &&
+               !gameState.level.specialTiles.teleports.some(t => t.x === x && t.y === y) &&
+               !gameState.level.specialTiles.dataNodes.some(d => d.x === x && d.y === y) &&
+               !(gameState.player.position.x === x && gameState.player.position.y === y) &&
+               !(gameState.level.goalPosition.x === x && gameState.level.goalPosition.y === y) &&
+               !gameState.ai.seekers.some(s => s.x === x && s.y === y) &&
+               !gameState.level.specialTiles.portals.some(p => p.x === x && p.y === y)
+      });
+      
+      if (validDirections.length > 0) {
+        const dir = validDirections[Math.floor(Math.random() * validDirections.length)];
+        const x = seeker.x + dir.x;
+        const y = seeker.y + dir.y;
+        
+        gameState.level.specialTiles.portals.push({
+          x, y,
+          expires: Date.now() + 5000 // Lasts 5 seconds
+        });
+      }
+    }
+  });
+  
+  // Remove expired portals
+  const now = Date.now();
+  gameState.level.specialTiles.portals = gameState.level.specialTiles.portals.filter(
+    portal => portal.expires > now
+  );
+}
 
-  Object.values(toolStats).forEach(tool => {
-    const div = document.createElement("div");
-    div.className = "upgrade-item";
-    div.innerHTML = `
-      <strong>${tool.icon} ${tool.name} (Lvl ${tool.level})</strong>
-      <span>${tool.desc}</span>
-      <button class="cyber-button" onclick="upgradeTool('${tool.name}')">
-        <span class="glow-text">Upgrade</span>
-        <span>${getUpgradeCost(tool)} CREDITS</span>
-      </button>
-    `;
-    list.appendChild(div);
+function movePlayer(x, y) {
+  if (gameState.player.role !== "hider" || !gameState.session.gameActive || gameState.session.isPaused) return;
+
+  // Check if target position is a firewall
+  const isFirewall = gameState.level.specialTiles.firewalls.some(t => t.x === x && t.y === y);
+  if (isFirewall) {
+    logAction("🚧 Firewall blocked your path!");
+    playSound('click');
+    return;
+  }
+
+  const dx = Math.abs(x - gameState.player.position.x);
+  const dy = Math.abs(y - gameState.player.position.y);
+
+  if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1) || 
+      (gameState.player.activeEffects.some(effect => effect.name === '🌀 Tor Trail') && dx === 1 && dy === 1)) {
+    
+    // Play footstep sound with alternating steps
+    const now = Date.now();
+    if (now - gameState.session.lastStepTime > 200) {
+      playSound(Math.random() > 0.5 ? 'footstep1' : 'footstep2', 0.3);
+      gameState.session.lastStepTime = now;
+    }
+
+    // Animate movement
+    const oldTile = document.querySelector(`.tile[data-x="${gameState.player.position.x}"][data-y="${gameState.player.position.y}"]`);
+    const newTile = document.querySelector(`.tile[data-x="${x}"][data-y="${y}"]`);
+    
+    if (oldTile && newTile) {
+      oldTile.classList.remove("hider");
+      oldTile.classList.add("move-from");
+      newTile.classList.add("move-to");
+      
+      setTimeout(() => {
+        oldTile.classList.remove("move-from");
+        newTile.classList.remove("move-to");
+        gameState.player.position = { x, y };
+        events.emit('player-moved', { x, y });
+        createMap();
+      }, 150);
+    } else {
+      gameState.player.position = { x, y };
+      events.emit('player-moved', { x, y });
+      createMap();
+    }
+  } else {
+    logAction("⚠️ Can't move there.");
+    playSound('click');
+  }
+}
+
+function checkTileEffects(x, y) {
+  // Check for data node collection
+  const dataNodeIndex = gameState.level.specialTiles.dataNodes.findIndex(t => t.x === x && t.y === y);
+  if (dataNodeIndex !== -1) {
+    gameState.player.coins += 5;
+    updateCoinsDisplay(gameState.player.coins);
+    gameState.level.specialTiles.dataNodes.splice(dataNodeIndex, 1);
+    logAction("💾 Collected data node (+5 coins)");
+    playSound('coin');
+    
+    // Add collection effect
+    createParticles({x, y}, 10, 'var(--accent-purple)');
+  }
+  
+  // Check for teleport pad
+  const teleport = gameState.level.specialTiles.teleports.find(t => t.x === x && t.y === y);
+  if (teleport) {
+    const destination = gameState.level.specialTiles.teleports.find(
+      t => t.pair === teleport.pair && (t.x !== x || t.y !== y)
+    );
+    if (destination) {
+      // Add teleport effect
+      createParticles({x, y}, 15, 'var(--secondary)');
+      
+      gameState.player.position = { x: destination.x, y: destination.y };
+      logAction("🌀 Teleported to another pad!");
+      playSound('teleport');
+      
+      // Add arrival effect
+      setTimeout(() => {
+        createParticles(destination, 15, 'var(--primary)');
+      }, 150);
+    }
+  }
+  
+  // Check for portal
+  const portal = gameState.level.specialTiles.portals.find(t => t.x === x && t.y === y);
+  if (portal) {
+    // Teleport to random position
+    let newX, newY;
+    let attempts = 0;
+    const maxAttempts = 50;
+    
+    do {
+      newX = Math.floor(Math.random() * gameState.level.mapSize);
+      newY = Math.floor(Math.random() * gameState.level.mapSize);
+      attempts++;
+      
+      if (attempts >= maxAttempts) break;
+    } while (
+      (newX === x && newY === y) ||
+      (newX === gameState.level.goalPosition.x && newY === gameState.level.goalPosition.y) ||
+      gameState.level.specialTiles.firewalls.some(t => t.x === newX && t.y === newY) ||
+      gameState.ai.seekers.some(s => s.x === newX && s.y === newY)
+    );
+    
+    if (attempts < maxAttempts) {
+      // Add teleport effect
+      createParticles({x, y}, 15, 'var(--accent-blue)');
+      
+      gameState.player.position = { x: newX, y: newY };
+      logAction("🌀 Portal teleported you!");
+      playSound('teleport');
+      
+      // Add arrival effect
+      setTimeout(() => {
+        createParticles({x: newX, y: newY}, 15, 'var(--primary)');
+      }, 150);
+      
+      // Remove the portal
+      gameState.level.specialTiles.portals = gameState.level.specialTiles.portals.filter(
+        p => !(p.x === x && p.y === y)
+      );
+    }
+  }
+  
+  checkWin();
+}
+
+// =============================================
+// AI Functions
+// =============================================
+
+function moveSeekerAI() {
+  if (!gameState.session.gameActive || gameState.session.isPaused) return;
+
+  gameState.ai.seekers.forEach(seeker => {
+    const dx = seeker.x - gameState.player.position.x;
+    const dy = seeker.y - gameState.player.position.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    // Adjust behavior based on intelligence level
+    const intelligenceFactor = gameState.ai.intelligence / 10;
+    const makeSmartMove = Math.random() < (0.3 + intelligenceFactor * 0.7);
+
+    if (distance > 0 && makeSmartMove) {
+      const possibleMoves = [];
+      
+      // Check all 4 directions
+      if (seeker.x > 0) possibleMoves.push({ x: seeker.x - 1, y: seeker.y });
+      if (seeker.x < gameState.level.mapSize - 1) possibleMoves.push({ x: seeker.x + 1, y: seeker.y });
+      if (seeker.y > 0) possibleMoves.push({ x: seeker.x, y: seeker.y - 1 });
+      if (seeker.y < gameState.level.mapSize - 1) possibleMoves.push({ x: seeker.x, y: seeker.y + 1 });
+
+      // Filter out firewalls, data nodes, and teleports
+      const validMoves = possibleMoves.filter(move => 
+        !gameState.level.specialTiles.firewalls.some(fw => fw.x === move.x && fw.y === move.y) &&
+        !gameState.level.specialTiles.dataNodes.some(dn => dn.x === move.x && dn.y === move.y) &&
+        !gameState.level.specialTiles.teleports.some(tp => tp.x === move.x && tp.y === move.y) &&
+        !gameState.level.specialTiles.portals.some(p => p.x === move.x && p.y === move.y)
+      );
+
+      if (validMoves.length > 0) {
+        // Find move that gets closest to player
+        let bestMove = validMoves[0];
+        let bestDistance = calculateDistance(bestMove, gameState.player.position);
+
+        validMoves.forEach(move => {
+          const currentDistance = calculateDistance(move, gameState.player.position);
+          if (currentDistance < bestDistance) {
+            bestMove = move;
+            bestDistance = currentDistance;
+          }
+        });
+
+        // Sometimes make a suboptimal move based on intelligence
+        if (Math.random() > intelligenceFactor) {
+          seeker.x = validMoves[Math.floor(Math.random() * validMoves.length)].x;
+          seeker.y = validMoves[Math.floor(Math.random() * validMoves.length)].y;
+        } else {
+          seeker.x = bestMove.x;
+          seeker.y = bestMove.y;
+        }
+      }
+    } else if (distance > 0) {
+      // Random move when not making smart move
+      const possibleMoves = [];
+      if (seeker.x > 0) possibleMoves.push({ x: seeker.x - 1, y: seeker.y });
+      if (seeker.x < gameState.level.mapSize - 1) possibleMoves.push({ x: seeker.x + 1, y: seeker.y });
+      if (seeker.y > 0) possibleMoves.push({ x: seeker.x, y: seeker.y - 1 });
+      if (seeker.y < gameState.level.mapSize - 1) possibleMoves.push({ x: seeker.x, y: seeker.y + 1 });
+
+      // Filter out firewalls, data nodes, and teleports
+      const validMoves = possibleMoves.filter(move => 
+        !gameState.level.specialTiles.firewalls.some(fw => fw.x === move.x && fw.y === move.y) &&
+        !gameState.level.specialTiles.dataNodes.some(dn => dn.x === move.x && dn.y === move.y) &&
+        !gameState.level.specialTiles.teleports.some(tp => tp.x === move.x && tp.y === move.y) &&
+        !gameState.level.specialTiles.portals.some(p => p.x === move.x && p.y === move.y)
+      );
+
+      if (validMoves.length > 0) {
+        const randomMove = validMoves[Math.floor(Math.random() * validMoves.length)];
+        seeker.x = randomMove.x;
+        seeker.y = randomMove.y;
+      }
+    }
+  });
+
+  events.emit('ai-move');
+  createMap();
+}
+
+function calculateDistance(pos1, pos2) {
+  return Math.sqrt(Math.pow(pos1.x - pos2.x, 2) + Math.pow(pos1.y - pos2.y, 2));
+}
+
+// =============================================
+// Visual Feedback Functions
+// =============================================
+
+function updateDetectionMeter() {
+  if (!gameState.session.gameActive || gameState.session.isPaused) return;
+
+  let closestDistance = Infinity;
+  gameState.ai.seekers.forEach(seeker => {
+    const distance = calculateDistance(seeker, gameState.player.position);
+    if (distance < closestDistance) closestDistance = distance;
+  });
+
+  // Calculate detection risk (0-100)
+  const maxDetectionRange = gameState.ai.detectionRange;
+  let detectionRisk = 0;
+  
+  if (closestDistance <= maxDetectionRange) {
+    detectionRisk = ((maxDetectionRange - closestDistance) / maxDetectionRange) * 100;
+    
+    // Reduce risk if cloaked
+    if (!gameState.player.activeEffects.some(effect => effect.name === '🕶️ Cloaking')) {
+      detectionRisk *= (1 - (gameState.player.stats.stealth * 0.1));
+    } else {
+      detectionRisk *= 0.3; // 70% reduction when cloaked
+    }
+  }
+
+  gameState.level.detectionRisk = Math.min(100, Math.max(0, detectionRisk));
+  
+  // Update UI
+  const meter = document.querySelector('.detection-level');
+  if (meter) {
+    meter.style.width = `${detectionRisk}%`;
+    
+    // Update player visual state
+    const playerTile = document.querySelector('.hider');
+    if (playerTile) {
+      if (detectionRisk > 70) {
+        playerTile.classList.add('high-alert');
+        playerTile.classList.remove('low-profile');
+      } else if (detectionRisk < 30) {
+        playerTile.classList.add('low-profile');
+        playerTile.classList.remove('high-alert');
+      } else {
+        playerTile.classList.remove('high-alert', 'low-profile');
+      }
+    }
+  }
+}
+
+function createParticles(position, count, color) {
+  const tile = document.querySelector(`.tile[data-x="${position.x}"][data-y="${position.y}"]`);
+  if (!tile) return;
+
+  const container = document.createElement('div');
+  container.className = 'particle-effect';
+  
+  for (let i = 0; i < count; i++) {
+    const particle = document.createElement('div');
+    particle.className = 'particle';
+    particle.style.background = color;
+    particle.style.left = `${Math.random() * 100}%`;
+    particle.style.top = `${Math.random() * 100}%`;
+    
+    // Random animation
+    const angle = Math.random() * Math.PI * 2;
+    const distance = 10 + Math.random() * 20;
+    const duration = 0.5 + Math.random() * 1;
+    
+    particle.style.transform = `translate(${Math.cos(angle) * distance}px, ${Math.sin(angle) * distance}px)`;
+    particle.style.opacity = '0';
+    particle.style.transition = `all ${duration}s ease-out`;
+    
+    container.appendChild(particle);
+    
+    // Trigger animation
+    setTimeout(() => {
+      particle.style.transform = 'translate(0, 0)';
+      particle.style.opacity = '0.7';
+    }, 10);
+    
+    // Remove after animation
+    setTimeout(() => {
+      particle.remove();
+    }, duration * 1000);
+  }
+  
+  tile.appendChild(container);
+  setTimeout(() => container.remove(), 1000);
+}
+
+// =============================================
+// Game Map Functions
+// =============================================
+
+function createMap() {
+  mapContainer.innerHTML = '';
+  mapContainer.style.gridTemplateColumns = `repeat(${gameState.level.mapSize}, 50px)`;
+  
+  for (let y = 0; y < gameState.level.mapSize; y++) {
+    for (let x = 0; x < gameState.level.mapSize; x++) {
+      const tile = document.createElement("div");
+      tile.className = "tile";
+      tile.dataset.x = x;
+      tile.dataset.y = y;
+      
+      // Check for special tiles first
+      if (gameState.level.specialTiles.firewalls.some(t => t.x === x && t.y === y)) {
+        tile.classList.add("firewall");
+        tile.textContent = "🚧";
+      } else if (gameState.level.specialTiles.dataNodes.some(t => t.x === x && t.y === y)) {
+        tile.classList.add("data-node");
+        tile.textContent = "💾";
+      } else if (gameState.level.specialTiles.teleports.some(t => t.x === x && t.y === y)) {
+        tile.classList.add("teleport");
+        tile.textContent = "🌀";
+      } else if (gameState.level.specialTiles.portals.some(t => t.x === x && t.y === y)) {
+        tile.classList.add("portal");
+        tile.textContent = "🌌";
+      } else if (x === gameState.player.position.x && y === gameState.player.position.y) {
+        tile.classList.add("hider");
+        tile.textContent = "💰";
+        if (gameState.player.activeEffects.some(effect => effect.name === '🌀 Tor Trail')) {
+          tile.classList.add("tor-trail-active");
+        }
+        if (gameState.player.activeEffects.some(effect => effect.name === '🕶️ Cloaking')) {
+          tile.classList.add("cloaking-active");
+        }
+      } else if (x === gameState.level.goalPosition.x && y === gameState.level.goalPosition.y) {
+        tile.classList.add("goal");
+        tile.textContent = "🏠";
+      } else {
+        gameState.ai.seekers.forEach(seeker => {
+          if (seeker.x === x && seeker.y === y) {
+            tile.classList.add("seeker");
+            tile.textContent = "🕵️"
+          }
+        });
+      }
+      
+      tile.addEventListener("click", () => movePlayer(x, y));
+      mapContainer.appendChild(tile);
+    }
+  }
+}
+
+// =============================================
+// Game Progress Functions
+// =============================================
+
+function resetGame() {
+  closeModals();
+  clearInterval(gameState.session.aiMoveInterval);
+  
+  // Reset player position
+  gameState.player.position = { x: 0, y: 0 };
+  gameState.session.gameActive = true;
+  gameState.session.isPaused = false;
+  
+  // Fixed 6x6 grid - removed the increasing size logic
+  gameState.level.mapSize = 6;
+  
+  // Generate random goal position ensuring it's at least 5 tiles away from player
+  do {
+    gameState.level.goalPosition = {
+      x: Math.floor(Math.random() * gameState.level.mapSize),
+      y: Math.floor(Math.random() * gameState.level.mapSize)
+    };
+  } while (
+    (gameState.level.goalPosition.x === gameState.player.position.x && 
+     gameState.level.goalPosition.y === gameState.player.position.y) ||
+    calculateDistance(gameState.player.position, gameState.level.goalPosition) < 5
+  );
+
+  // Generate special tiles
+  generateSpecialTiles();
+
+  // Set seekers based on level - progressive difficulty
+  let enemyCount;
+  if (gameState.level.current < 10) {
+    enemyCount = 2;
+  } else if (gameState.level.current < 20) {
+    enemyCount = 3;
+  } else if (gameState.level.current < 30) {
+    enemyCount = 4;
+  } else if (gameState.level.current < 40) {
+    enemyCount = 5;
+  } else {
+    enemyCount = 6;
+  }
+  
+  // Progressive AI difficulty
+  gameState.ai.intelligence = Math.min(10, Math.floor(gameState.level.current / 3) + 1);
+  gameState.ai.speed = Math.max(1000, 3000 - (gameState.level.current * 100));
+  gameState.ai.detectionRange = Math.min(5, 3 + Math.floor(gameState.level.current / 5));
+  
+  gameState.ai.seekers = [];
+  for (let i = 0; i < enemyCount; i++) {
+    let x, y;
+    let attempts = 0;
+    const maxAttempts = 100; // Increased from 50 to ensure placement
+    
+    do {
+      x = Math.floor(Math.random() * gameState.level.mapSize);
+      y = Math.floor(Math.random() * gameState.level.mapSize);
+      attempts++;
+      
+      if (attempts >= maxAttempts) break;
+    } while (
+      // Don't spawn on player or goal
+      (x === gameState.player.position.x && y === gameState.player.position.y) ||
+      (x === gameState.level.goalPosition.x && y === gameState.level.goalPosition.y) ||
+      // Don't spawn on firewalls
+      gameState.level.specialTiles.firewalls.some(t => t.x === x && t.y === y) ||
+      // Don't spawn too close to player (now 4 tiles minimum)
+      calculateDistance({x, y}, gameState.player.position) < 4 ||
+      // Don't spawn on existing seekers
+      gameState.ai.seekers.some(s => s.x === x && s.y === y) ||
+      // Don't spawn on special tiles
+      gameState.level.specialTiles.dataNodes.some(t => t.x === x && t.y === y) ||
+      gameState.level.specialTiles.teleports.some(t => t.x === x && t.y === y)
+    );
+    
+    if (attempts < maxAttempts) {
+      gameState.ai.seekers.push({ x, y });
+    }
+  }
+
+  gameState.player.activeEffects = gameState.player.activeEffects.filter(
+    effect => effect.permanent
+  );
+
+  // Start AI movement with adjusted speed
+  gameState.session.aiMoveInterval = setInterval(moveSeekerAI, gameState.ai.speed);
+  logAction(`🚀 Level ${gameState.level.current} (6x6): ${enemyCount} enemies at speed ${gameState.ai.speed}ms`);
+  createMap();
+}
+
+function checkWin() {
+  if (gameState.player.position.x === gameState.level.goalPosition.x && 
+      gameState.player.position.y === gameState.level.goalPosition.y) {
+    const coinsEarned = 10 + Math.floor(gameState.level.current / 2);
+    logAction(`🔓 Goal reached! Earned ${coinsEarned} coins.`);
+    playSound('win');
+    gameState.player.score += 10;
+    gameState.player.coins += coinsEarned;
+    gameState.level.current += 1;
+    
+    document.getElementById("coinsEarned").textContent = `+${coinsEarned} coins earned`;
+    updateScoreDisplay(gameState.player.score);
+    updateLevelDisplay(gameState.level.current);
+    updateCoinsDisplay(gameState.player.coins);
+    showWinModal();
+    
+    // Add celebration effect
+    createParticles(gameState.level.goalPosition, 30, 'var(--accent-green)');
+    
+    setTimeout(resetGame, 1000);
+  }
+}
+
+function checkCaught() {
+  if (!gameState.session.gameActive || gameState.session.isPaused) return;
+
+  gameState.ai.seekers.forEach(seeker => {
+    if (seeker.x === gameState.player.position.x && seeker.y === gameState.player.position.y) {
+      // Check if cloaked (30% chance to still get caught when cloaked)
+      const isCloaked = gameState.player.activeEffects.some(effect => effect.name === '🕶️ Cloaking');
+      if (isCloaked && Math.random() > 0.3) {
+        logAction("🕶️ Nearly detected but cloak saved you!");
+        playSound('powerup', 0.3);
+        return;
+      }
+
+      const caughtBy = enemyList[Math.floor(Math.random() * enemyList.length)];
+      const method = detectionMethods[Math.floor(Math.random() * detectionMethods.length)];
+
+      document.getElementById("caughtByEnemy").innerText = caughtBy;
+      document.getElementById("detectionMethod").innerText = method;
+      
+      logAction(`🚨 Caught by ${caughtBy} using ${method}`);
+      playSound('lose');
+      
+      // Add caught effect
+      createParticles(gameState.player.position, 30, 'var(--accent-red)');
+      
+      // Decrease lives
+      gameState.player.lives--;
+      updateLivesDisplay(gameState.player.lives);
+      
+      if (gameState.player.lives > 0) {
+        logAction(`❤️ ${gameState.player.lives} lives remaining!`);
+        gameState.player.position = { x: 0, y: 0 };
+        
+        // Reset seekers with minimum distance
+        gameState.ai.seekers = gameState.ai.seekers.map(() => {
+          let x, y;
+          let attempts = 0;
+          const maxAttempts = 50;
+          
+          do {
+            x = Math.floor(Math.random() * gameState.level.mapSize);
+            y = Math.floor(Math.random() * gameState.level.mapSize);
+            attempts++;
+            
+            if (attempts >= maxAttempts) break;
+          } while (
+            (x === gameState.player.position.x && y === gameState.player.position.y) ||
+            (x === gameState.level.goalPosition.x && y === gameState.level.goalPosition.y) ||
+            gameState.level.specialTiles.firewalls.some(t => t.x === x && t.y === y) ||
+            calculateDistance({x, y}, gameState.player.position) < 4
+          );
+          
+          return { x, y };
+        });
+        
+        createMap();
+      } else {
+        // No lives left - game over
+        gameState.session.gameActive = false;
+        clearInterval(gameState.session.aiMoveInterval);
+        showLoseModal();
+      }
+    }
   });
 }
 
-// Calculate upgrade cost
-function getUpgradeCost(tool) {
-  return tool.costBase + (tool.level - 1) * tool.costInc;
+// =============================================
+// Tool and Ability Functions
+// =============================================
+
+function useCloaking() {
+  if (!gameState.session.gameActive || gameState.session.isPaused) {
+    logAction("⚠️ Cloaking is on cooldown.");
+    playSound('click');
+    return;
+  }
+  
+  // Check if already cloaked
+  if (gameState.player.activeEffects.some(effect => effect.name === '🕶️ Cloaking')) {
+    logAction("⚠️ Already cloaked!");
+    playSound('click');
+    return;
+  }
+
+  logAction("🕶️ Cloaking activated!");
+  playSound('cloak');
+  events.emit('cloak-used');
+  
+  const duration = toolStats.cloaking.duration * gameState.player.stats.cloaking;
+  
+  gameState.player.activeEffects.push({
+    name: '🕶️ Cloaking',
+    duration: duration,
+    expires: Date.now() + duration * 1000
+  });
+  
+  startCooldown('cloaking', toolStats.cloaking.cooldown);
+  
+  // Add visual effect
+  const playerTile = document.querySelector(".hider");
+  if (playerTile) {
+    playerTile.classList.add("cloaking-active");
+    setTimeout(() => {
+      playerTile.classList.remove("cloaking-active");
+    }, duration * 1000);
+  }
+
+  setTimeout(() => {
+    gameState.player.activeEffects = gameState.player.activeEffects.filter(
+      effect => effect.name !== '🕶️ Cloaking'
+    );
+    logAction("🕶️ Cloaking expired.");
+  }, duration * 1000);
 }
 
-// Upgrade a tool
+function plantDecoyData() {
+  if (gameState.player.activeEffects.some(effect => effect.name === '📡 Decoy') || 
+      !gameState.session.gameActive || gameState.session.isPaused) {
+    logAction("🛑 Decoy is on cooldown.");
+    playSound('click');
+    return;
+  }
+  
+  logAction("📡 Decoy planted! Confusing AI.");
+  playSound('decoy');
+  events.emit('decoy-used');
+  
+  const duration = toolStats.decoy.duration;
+  
+  gameState.player.activeEffects.push({
+    name: '📡 Decoy',
+    duration: duration,
+    expires: Date.now() + duration * 1000
+  });
+  
+  startCooldown('decoy', toolStats.decoy.cooldown);
+
+  // Move all seekers to random positions
+  gameState.ai.seekers = gameState.ai.seekers.map(() => ({
+    x: Math.floor(Math.random() * gameState.level.mapSize),
+    y: Math.floor(Math.random() * gameState.level.mapSize)
+  }));
+  
+  createMap();
+
+  setTimeout(() => {
+    gameState.player.activeEffects = gameState.player.activeEffects.filter(
+      effect => effect.name !== '📡 Decoy'
+    );
+    logAction("📡 Decoy expired.");
+  }, duration * 1000);
+}
+
+function useUSBAdapter() {
+  if (gameState.session.isPaused) return;
+  logAction("🔌 Bootable USB used! Goal revealed.");
+  playSound('powerup', 0.5);
+  const goalTile = document.querySelector(".goal");
+  if (goalTile) {
+    goalTile.classList.add("goal-revealed");
+    createParticles(gameState.level.goalPosition, 15, 'var(--accent-blue)');
+  }
+  setTimeout(() => {
+    const goalTile = document.querySelector(".goal");
+    if (goalTile) goalTile.classList.remove("goal-revealed");
+  }, 3000);
+}
+
+function useTorTrail() {
+  if (gameState.session.isPaused) return;
+  if (gameState.player.activeEffects.some(effect => effect.name === '🌀 Tor Trail')) {
+    logAction("⚠️ Tor Trail is already active.");
+    playSound('click');
+    return;
+  }
+
+  logAction("🌀 Tor Trail active! Diagonal move unlocked.");
+  playSound('powerup', 0.6);
+  
+  const duration = toolStats.torTrail.duration;
+  
+  gameState.player.activeEffects.push({
+    name: '🌀 Tor Trail',
+    duration: duration,
+    expires: Date.now() + duration * 1000
+  });
+  
+  startCooldown('torTrail', toolStats.torTrail.cooldown);
+
+  // Add visual effect to player
+  const playerTile = document.querySelector(".hider");
+  if (playerTile) {
+    playerTile.classList.add("tor-trail-active");
+    setTimeout(() => {
+      playerTile.classList.remove("tor-trail-active");
+    }, duration * 1000);
+  }
+
+  setTimeout(() => {
+    gameState.player.activeEffects = gameState.player.activeEffects.filter(
+      effect => effect.name !== '🌀 Tor Trail'
+    );
+    logAction("🌀 Tor Trail expired.");
+  }, duration * 1000);
+}
+
+function useCCCleanser() {
+  if (gameState.session.isPaused) return;
+  logAction("🧯 CC Cleaner used! Seekers confused.");
+  playSound('powerup', 0.8);
+  const newX = Math.floor(Math.random() * gameState.level.mapSize);
+  const newY = Math.floor(Math.random() * gameState.level.mapSize);
+  gameState.ai.seekers = [{ x: newX, y: newY }];
+  
+  // Add visual effect
+  createParticles({x: newX, y: newY}, 20, 'var(--accent-purple)');
+  
+  createMap();
+}
+
+function useVPN() {
+  if (gameState.session.isPaused) return;
+  if (gameState.player.activeEffects.some(effect => effect.name === '🛡️ VPN')) {
+    logAction("⚠️ VPN is on cooldown.");
+    playSound('click');
+    return;
+  }
+
+  logAction("🛡️ VPN activated! Short-term invisibility.");
+  playSound('powerup', 0.4);
+  
+  const duration = toolStats.vpn.duration;
+  
+  gameState.player.activeEffects.push({
+    name: '🛡️ VPN',
+    duration: duration,
+    expires: Date.now() + duration * 1000
+  });
+  
+  startCooldown('vpn', toolStats.vpn.cooldown);
+
+  setTimeout(() => {
+    gameState.player.activeEffects = gameState.player.activeEffects.filter(
+      effect => effect.name !== '🛡️ VPN'
+    );
+    logAction("🛡️ VPN expired.");
+  }, duration * 1000);
+}
+
+function openPrivacyToolsMarket() {
+  if (gameState.session.isPaused) return;
+  logAction("🛒 Privacy Tools Market opened.");
+  playSound('powerup', 0.3);
+  
+  const modal = document.getElementById("privacyToolsModal");
+  const list = document.getElementById("privacy-tools-list");
+  list.innerHTML = '';
+  
+  Object.values(toolStats).forEach(tool => {
+    const div = document.createElement("div");
+    div.className = "upgrade-item";
+    
+    if (tool.owned) {
+      // Show upgrade options for owned tools
+      div.innerHTML = `
+        <strong>${tool.icon} ${tool.name} (Lvl ${tool.level})</strong>
+        <span>${tool.desc}</span>
+        <button class="cyber-button" onclick="upgradeTool('${tool.name}')">
+          <span class="glow-text">Upgrade</span>
+          <span>${getUpgradeCost(tool)} CREDITS</span>
+        </button>
+      `;
+    } else {
+      // Show purchase option for unowned tools
+      div.innerHTML = `
+        <strong>${tool.icon} ${tool.name}</strong>
+        <span>${tool.desc}</span>
+        <button class="cyber-button" onclick="buyTool('${tool.name}')">
+          <span class="glow-text">Purchase</span>
+          <span>${tool.costBase} CREDITS</span>
+        </button>
+      `;
+    }
+    
+    list.appendChild(div);
+  });
+  
+  modal.style.display = "flex";
+}
+
+function closePrivacyToolsMarket() {
+  document.getElementById("privacyToolsModal").style.display = "none";
+  playSound('click');
+}
+
+function buyTool(toolName) {
+  const tool = Object.values(toolStats).find(t => t.name === toolName);
+  
+  if (gameState.player.coins >= tool.costBase) {
+    gameState.player.coins -= tool.costBase;
+    tool.owned = true;
+    gameState.player.ownedTools[toolName.toLowerCase()] = true;
+    
+    // Add to inventory
+    addToInventory(tool.name, tool.desc, () => {
+      if (toolName === 'Cloaking') useCloaking();
+      else if (toolName === 'Decoy') plantDecoyData();
+      else if (toolName === 'Tor Trail') useTorTrail();
+      else if (toolName === 'VPN') useVPN();
+      else if (toolName === 'CC Cleaner') useCCCleanser();
+    }, tool.icon);
+    
+    updateCoinsDisplay(gameState.player.coins);
+    logAction(`🛍️ Purchased ${tool.name}!`);
+    playSound('coin');
+    openPrivacyToolsMarket(); // Refresh modal
+  } else {
+    logAction(`🪙 Need ${tool.costBase} coins to buy ${tool.name}.`);
+    playSound('click');
+  }
+}
+
 function upgradeTool(toolName) {
   const tool = Object.values(toolStats).find(t => t.name === toolName);
   const cost = getUpgradeCost(tool);
 
-  if (gameState.coins >= cost) {
-    gameState.coins -= cost;
+  if (gameState.player.coins >= cost) {
+    gameState.player.coins -= cost;
     tool.level++;
     if (tool.duration) tool.duration += 2;
     if (tool.moves) tool.moves += 1;
-    updateCoinsDisplay(gameState.coins);
+    updateCoinsDisplay(gameState.player.coins);
     logAction(`📈 Upgraded ${tool.name} to Lvl ${tool.level}`);
     playSound('powerup');
-    openUpgradeMenu(); // Refresh modal
+    openPrivacyToolsMarket(); // Refresh modal
   } else {
     logAction(`🪙 Need ${cost} coins to upgrade ${tool.name}.`);
     playSound('click');
   }
 }
 
-// Close upgrade menu
-function closeUpgradeMenu() {
-  document.getElementById("upgradeModal").style.display = "none";
-  playSound('click');
+function getUpgradeCost(tool) {
+  return tool.costBase + (tool.level - 1) * tool.costInc;
 }
 
-// Initialize inventory
+// =============================================
+// Inventory and Shop Functions
+// =============================================
+
 function initInventory() {
   const inv = document.getElementById("inventory");
   inv.innerHTML = '';
 }
 
-// Add item to inventory
 function addToInventory(itemName, description, useFunction, icon = "❓") {
   const inv = document.getElementById("inventory");
   const item = document.createElement("div");
@@ -531,10 +1464,9 @@ function addToInventory(itemName, description, useFunction, icon = "❓") {
   `;
   item.onclick = useFunction;
   inv.appendChild(item);
-  gameState.inventory.push({ name: itemName, description, useFunction, icon });
+  gameState.player.inventory.push({ name: itemName, description, useFunction, icon });
 }
 
-// Initialize shop
 function initShop() {
   const shop = document.getElementById("shop");
   shop.innerHTML = "";
@@ -553,619 +1485,32 @@ function initShop() {
   });
 }
 
-// Buy item from shop
 function buyItem(item) {
-  if (gameState.coins < item.cost) {
+  if (gameState.player.coins < item.cost) {
     logAction(`🪙 Not enough coins to buy ${item.name}`);
     playSound('click');
     return;
   }
 
-  gameState.coins -= item.cost;
-  updateCoinsDisplay(gameState.coins);
+  gameState.player.coins -= item.cost;
+  updateCoinsDisplay(gameState.player.coins);
   if (item.action) {
-    addToInventory(item.name, item.desc, item.action, item.icon);
-  } else {
-    // Directly apply effect if no action specified (like extra life)
-    item.action();
+    if (item.name === "Extra Life") {
+      item.action();
+    } else {
+      addToInventory(item.name, item.desc, item.action, item.icon);
+    }
   }
   logAction(`🛍️ Bought: ${item.name}`);
   playSound('coin');
 }
 
-// Use USB adapter
-function useUSBAdapter() {
-  if (gameState.isPaused) return;
-  logAction("🔌 Bootable USB used! Goal revealed.");
-  playSound('powerup', 0.5);
-  const goalTile = document.querySelector(".goal");
-  if (goalTile) {
-    goalTile.classList.add("goal-revealed");
-    // Add particle effect
-    const particles = document.createElement("div");
-    particles.className = "particles";
-    goalTile.appendChild(particles);
-    setTimeout(() => {
-      particles.remove();
-    }, 3000);
-  }
-  setTimeout(() => {
-    const goalTile = document.querySelector(".goal");
-    if (goalTile) goalTile.classList.remove("goal-revealed");
-  }, 3000);
-}
+// =============================================
+// Utility Functions
+// =============================================
 
-// Use Tor Trail
-function useTorTrail() {
-  if (gameState.isPaused) return;
-  if (gameState.torTrailActive) {
-    logAction("⚠️ Tor Trail is already active.");
-    playSound('click');
-    return;
-  }
-
-  logAction("🌀 Tor Trail active! Diagonal move unlocked.");
-  playSound('powerup', 0.6);
-  gameState.torTrailActive = true;
-  startCooldown('torTrail', toolStats.torTrail.cooldown);
-  addActiveEffect('🌀 Tor Trail', toolStats.torTrail.duration);
-
-  // Add visual effect to player
-  const playerTile = document.querySelector(".hider");
-  if (playerTile) {
-    playerTile.classList.add("tor-trail-active");
-    setTimeout(() => {
-      playerTile.classList.remove("tor-trail-active");
-    }, toolStats.torTrail.duration * 1000);
-  }
-
-  setTimeout(() => {
-    gameState.torTrailActive = false;
-    logAction("🌀 Tor Trail expired.");
-  }, toolStats.torTrail.duration * 1000);
-}
-
-// Use CC Cleaner
-function useCCCleanser() {
-  if (gameState.isPaused) return;
-  logAction("🧯 CC Cleaner used! Seekers confused.");
-  playSound('powerup', 0.8);
-  const newX = Math.floor(Math.random() * gameState.mapSize);
-  const newY = Math.floor(Math.random() * gameState.mapSize);
-  gameState.seekerPositions = [{ x: newX, y: newY }];
-  
-  // Add visual effect
-  const seekers = document.querySelectorAll(".seeker");
-  seekers.forEach(seeker => {
-    const effect = document.createElement("div");
-    effect.className = "teleport-effect";
-    seeker.appendChild(effect);
-    setTimeout(() => effect.remove(), 1000);
-  });
-  
-  createMap();
-}
-
-// Use VPN
-function useVPN() {
-  if (gameState.isPaused) return;
-  if (!gameState.cloakingAvailable) {
-    logAction("⚠️ VPN is on cooldown.");
-    playSound('click');
-    return;
-  }
-
-  logAction("🛡️ VPN activated! Short-term invisibility.");
-  playSound('powerup', 0.4);
-  gameState.cloakingAvailable = false;
-  startCooldown('vpn', toolStats.vpn.cooldown);
-  addActiveEffect('🛡️ VPN', toolStats.vpn.duration);
-
-  setTimeout(() => {
-    gameState.cloakingAvailable = true;
-    logAction("🛡️ VPN expired.");
-  }, toolStats.vpn.duration * 1000);
-}
-
-// Enter Dark Web Market
-function enterDarkWebMarket() {
-  if (gameState.isPaused) return;
-  logAction("🛒 Dark Web Market opened.");
-  playSound('powerup', 0.3);
-  const items = [
-    { name: "Corruption Evidence", icon: "📄", action: useUSBAdapter },
-    { name: "Security Bypass Key", icon: "🔑", action: useTorTrail },
-    { name: "Anonymous Identity", icon: "👤", action: useCCCleanser }
-  ];
-  const choice = items[Math.floor(Math.random() * items.length)];
-  logAction(`🎁 Obtained: ${choice.name}`);
-  addToInventory(choice.name, "One-time use item", choice.action, choice.icon);
-}
-
-// Move player to new position with animation
-function movePlayer(x, y) {
-  if (gameState.currentRole !== "hider" || !gameState.gameActive || gameState.isPaused) return;
-
-  // Check if target position is a firewall
-  const isFirewall = gameState.specialTiles.firewalls.some(t => t.x === x && t.y === y);
-  if (isFirewall) {
-    logAction("🚧 Firewall blocked your path!");
-    playSound('click');
-    return;
-  }
-
-  const dx = Math.abs(x - gameState.hiderPosition.x);
-  const dy = Math.abs(y - gameState.hiderPosition.y);
-
-  if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1) || (gameState.torTrailActive && dx === 1 && dy === 1)) {
-    // Play footstep sound with alternating steps
-    const now = Date.now();
-    if (now - gameState.lastStepTime > 200) { // Throttle footsteps
-      playSound(Math.random() > 0.5 ? 'footstep1' : 'footstep2', 0.3);
-      gameState.lastStepTime = now;
-    }
-
-    // Animate movement
-    const oldTile = document.querySelector(`.tile[data-x="${gameState.hiderPosition.x}"][data-y="${gameState.hiderPosition.y}"]`);
-    const newTile = document.querySelector(`.tile[data-x="${x}"][data-y="${y}"]`);
-    
-    if (oldTile && newTile) {
-      oldTile.classList.remove("hider");
-      oldTile.classList.add("move-from");
-      newTile.classList.add("move-to");
-      
-      setTimeout(() => {
-        oldTile.classList.remove("move-from");
-        newTile.classList.remove("move-to");
-        gameState.hiderPosition = { x, y };
-        checkTileEffects(x, y);
-        createMap();
-      }, 150);
-    } else {
-      gameState.hiderPosition = { x, y };
-      checkTileEffects(x, y);
-      createMap();
-    }
-  } else {
-    logAction("⚠️ Can't move there.");
-    playSound('click');
-  }
-}
-
-// Check for tile effects after movement
-function checkTileEffects(x, y) {
-  // Check for data node collection
-  const dataNodeIndex = gameState.specialTiles.dataNodes.findIndex(t => t.x === x && t.y === y);
-  if (dataNodeIndex !== -1) {
-    gameState.coins += 5;
-    updateCoinsDisplay(gameState.coins);
-    gameState.specialTiles.dataNodes.splice(dataNodeIndex, 1);
-    logAction("💾 Collected data node (+5 coins)");
-    playSound('coin');
-    
-    // Add collection effect
-    const tile = document.querySelector(`.tile[data-x="${x}"][data-y="${y}"]`);
-    if (tile) {
-      const effect = document.createElement("div");
-      effect.className = "collect-effect";
-      tile.appendChild(effect);
-      setTimeout(() => effect.remove(), 1000);
-    }
-  }
-  
-  // Check for teleport pad
-  const teleport = gameState.specialTiles.teleports.find(t => t.x === x && t.y === y);
-  if (teleport) {
-    const destination = gameState.specialTiles.teleports.find(
-      t => t.pair === teleport.pair && (t.x !== x || t.y !== y)
-    );
-    if (destination) {
-      // Add teleport effect
-      const tile = document.querySelector(`.tile[data-x="${x}"][data-y="${y}"]`);
-      if (tile) {
-        const effect = document.createElement("div");
-        effect.className = "teleport-effect";
-        tile.appendChild(effect);
-        setTimeout(() => effect.remove(), 1000);
-      }
-      
-      gameState.hiderPosition = { x: destination.x, y: destination.y };
-      logAction("🌀 Teleported to another pad!");
-      playSound('teleport');
-      
-      // Add arrival effect
-      setTimeout(() => {
-        const destTile = document.querySelector(`.tile[data-x="${destination.x}"][data-y="${destination.y}"]`);
-        if (destTile) {
-          const arriveEffect = document.createElement("div");
-          arriveEffect.className = "teleport-arrive";
-          destTile.appendChild(arriveEffect);
-          setTimeout(() => arriveEffect.remove(), 1000);
-        }
-      }, 150);
-    }
-  }
-  
-  checkWin();
-}
-
-// Move AI seekers - IMPROVED CHASING LOGIC
-function moveSeekerAI() {
-  if (!gameState.cloakingAvailable || !gameState.gameActive || gameState.isPaused) return;
-
-  gameState.seekerPositions.forEach(seeker => {
-    // Calculate distance to hider
-    const dx = seeker.x - gameState.hiderPosition.x;
-    const dy = seeker.y - gameState.hiderPosition.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-
-    // Only move if not already on top of hider
-    if (distance > 0) {
-      // Calculate possible moves
-      const possibleMoves = [];
-      
-      // Check all 4 directions
-      if (seeker.x > 0) possibleMoves.push({ x: seeker.x - 1, y: seeker.y });
-      if (seeker.x < gameState.mapSize - 1) possibleMoves.push({ x: seeker.x + 1, y: seeker.y });
-      if (seeker.y > 0) possibleMoves.push({ x: seeker.x, y: seeker.y - 1 });
-      if (seeker.y < gameState.mapSize - 1) possibleMoves.push({ x: seeker.x, y: seeker.y + 1 });
-
-      // Filter out moves that would hit firewalls
-      const validMoves = possibleMoves.filter(move => 
-        !gameState.specialTiles.firewalls.some(fw => fw.x === move.x && fw.y === move.y)
-      );
-
-      if (validMoves.length > 0) {
-        // Find move that gets us closest to hider
-        let bestMove = validMoves[0];
-        let bestDistance = Math.sqrt(
-          Math.pow(bestMove.x - gameState.hiderPosition.x, 2) + 
-          Math.pow(bestMove.y - gameState.hiderPosition.y, 2)
-        );
-
-        for (let i = 1; i < validMoves.length; i++) {
-          const move = validMoves[i];
-          const currentDistance = Math.sqrt(
-            Math.pow(move.x - gameState.hiderPosition.x, 2) + 
-            Math.pow(move.y - gameState.hiderPosition.y, 2)
-          );
-          
-          if (currentDistance < bestDistance) {
-            bestMove = move;
-            bestDistance = currentDistance;
-          }
-        }
-
-        // 10% chance to make a random move instead (to make less predictable)
-        if (Math.random() < 0.1) {
-          seeker.x = validMoves[Math.floor(Math.random() * validMoves.length)].x;
-          seeker.y = validMoves[Math.floor(Math.random() * validMoves.length)].y;
-        } else {
-          seeker.x = bestMove.x;
-          seeker.y = bestMove.y;
-        }
-      }
-    }
-  });
-
-  checkCaught();
-  createMap();
-}
-
-// Calculate minimum distance between two positions
-function calculateDistance(pos1, pos2) {
-  return Math.sqrt(Math.pow(pos1.x - pos2.x, 2) + Math.pow(pos1.y - pos2.y, 2));
-}
-
-// Reset game state for new level
-function resetGame() {
-  closeModals(); // Close any open modals first
-  clearInterval(gameState.aiMoveInterval);
-  gameState.hiderPosition = { x: 0, y: 0 };
-  gameState.gameActive = true;
-  gameState.isPaused = false;
-  
-  // Increase map size every 3 levels (max 9x9)
-  gameState.mapSize = Math.min(9, 5 + Math.floor(gameState.level / 3));
-  
-  // Generate random goal position
-  do {
-    gameState.goalPosition = {
-      x: Math.floor(Math.random() * gameState.mapSize),
-      y: Math.floor(Math.random() * gameState.mapSize)
-    };
-  } while (
-    (gameState.goalPosition.x === gameState.hiderPosition.x && 
-     gameState.goalPosition.y === gameState.hiderPosition.y)
-  );
-
-  // Generate special tiles
-  generateSpecialTiles();
-
-  // Set seekers based on level - progressive difficulty
-  const baseEnemyCount = 1;
-  const additionalEnemies = Math.min(Math.floor(gameState.level / 2), 4);
-  const enemyCount = baseEnemyCount + additionalEnemies;
-  
-  gameState.seekerPositions = [];
-  for (let i = 0; i < enemyCount; i++) {
-    let x, y;
-    let attempts = 0;
-    const maxAttempts = 50;
-    
-    do {
-      x = Math.floor(Math.random() * gameState.mapSize);
-      y = Math.floor(Math.random() * gameState.mapSize);
-      attempts++;
-      
-      // Ensure seekers don't spawn too close to hider (minimum 3 tiles away)
-      const distanceToHider = calculateDistance({x, y}, gameState.hiderPosition);
-      
-      if (attempts >= maxAttempts) {
-        // If we can't find a good position after many attempts, just place it anywhere
-        break;
-      }
-    } while (
-      (x === gameState.hiderPosition.x && y === gameState.hiderPosition.y) ||
-      (x === gameState.goalPosition.x && y === gameState.goalPosition.y) ||
-      gameState.specialTiles.firewalls.some(t => t.x === x && t.y === y) ||
-      calculateDistance({x, y}, gameState.hiderPosition) < 3
-    );
-    
-    gameState.seekerPositions.push({ x, y });
-  }
-
-  gameState.cloakingAvailable = true;
-  gameState.decoyPlanted = false;
-  gameState.torTrailActive = false;
-
-  // Adjust AI speed based on level
-  const aiSpeed = getSeekerSpeed();
-  
-  gameState.aiMoveInterval = setInterval(moveSeekerAI, aiSpeed);
-  logAction(`🚀 Level ${gameState.level} (${gameState.mapSize}x${gameState.mapSize}): ${enemyCount} enemies at speed ${aiSpeed}ms`);
-  createMap();
-}
-
-// Create the game map with animations
-function createMap() {
-  mapContainer.innerHTML = '';
-  // Update grid template based on current map size
-  mapContainer.style.gridTemplateColumns = `repeat(${gameState.mapSize}, 50px)`;
-  
-  for (let y = 0; y < gameState.mapSize; y++) {
-    for (let x = 0; x < gameState.mapSize; x++) {
-      const tile = document.createElement("div");
-      tile.className = "tile";
-      tile.dataset.x = x;
-      tile.dataset.y = y;
-      
-      // Check for special tiles first
-      if (gameState.specialTiles.firewalls.some(t => t.x === x && t.y === y)) {
-        tile.classList.add("firewall");
-        tile.textContent = "🚧";
-      } else if (gameState.specialTiles.dataNodes.some(t => t.x === x && t.y === y)) {
-        tile.classList.add("data-node");
-        tile.textContent = "💾";
-      } else if (gameState.specialTiles.teleports.some(t => t.x === x && t.y === y)) {
-        tile.classList.add("teleport");
-        tile.textContent = "🌀";
-      } else if (x === gameState.hiderPosition.x && y === gameState.hiderPosition.y) {
-        tile.classList.add("hider");
-        tile.textContent = "🧍";
-        if (gameState.torTrailActive) {
-          tile.classList.add("tor-trail-active");
-        }
-      } else if (x === gameState.goalPosition.x && y === gameState.goalPosition.y) {
-        tile.classList.add("goal");
-        tile.textContent = "🔓";
-      } else {
-        gameState.seekerPositions.forEach(seeker => {
-          if (seeker.x === x && seeker.y === y) {
-            tile.classList.add("seeker");
-            tile.textContent = "👁️";
-          }
-        });
-      }
-      
-      tile.addEventListener("click", () => movePlayer(x, y));
-      mapContainer.appendChild(tile);
-    }
-  }
-}
-
-// Check if player reached the goal
-function checkWin() {
-  if (gameState.hiderPosition.x === gameState.goalPosition.x && 
-      gameState.hiderPosition.y === gameState.goalPosition.y) {
-    const coinsEarned = 10 + Math.floor(gameState.level / 2);
-    logAction(`🔓 Goal reached! Earned ${coinsEarned} coins.`);
-    playSound('win');
-    gameState.score += 10;
-    gameState.coins += coinsEarned;
-    gameState.level += 1;
-    
-    document.getElementById("coinsEarned").textContent = `+${coinsEarned} coins earned`;
-    updateScoreDisplay(gameState.score);
-    updateLevelDisplay(gameState.level);
-    updateCoinsDisplay(gameState.coins);
-    showWinModal();
-    
-    // Add celebration effect
-    const goalTile = document.querySelector(".goal");
-    if (goalTile) {
-      const effect = document.createElement("div");
-      effect.className = "win-effect";
-      goalTile.appendChild(effect);
-      setTimeout(() => effect.remove(), 2000);
-    }
-    
-    setTimeout(resetGame, 1000);
-  }
-}
-
-// Check if player was caught
-function checkCaught() {
-  if (!gameState.cloakingAvailable || !gameState.gameActive || gameState.isPaused) return;
-
-  gameState.seekerPositions.forEach(seeker => {
-    if (seeker.x === gameState.hiderPosition.x && seeker.y === gameState.hiderPosition.y) {
-      const caughtBy = enemyList[Math.floor(Math.random() * enemyList.length)];
-      const method = detectionMethods[Math.floor(Math.random() * detectionMethods.length)];
-
-      document.getElementById("caughtByEnemy").innerText = caughtBy;
-      document.getElementById("detectionMethod").innerText = method;
-      
-      logAction(`🚨 Caught by ${caughtBy} using ${method}`);
-      playSound('lose');
-      
-      // Add caught effect
-      const playerTile = document.querySelector(".hider");
-      if (playerTile) {
-        const effect = document.createElement("div");
-        effect.className = "caught-effect";
-        playerTile.appendChild(effect);
-        setTimeout(() => effect.remove(), 1000);
-      }
-      
-      // Decrease lives
-      gameState.lives--;
-      updateLivesDisplay(gameState.lives);
-      
-      if (gameState.lives > 0) {
-        // If still have lives, reset position
-        logAction(`❤️ ${gameState.lives} lives remaining!`);
-        gameState.hiderPosition = { x: 0, y: 0 };
-        
-        // Reset seekers with minimum distance
-        gameState.seekerPositions = [];
-        const enemyCount = gameState.seekerPositions.length;
-        for (let i = 0; i < enemyCount; i++) {
-          let x, y;
-          let attempts = 0;
-          const maxAttempts = 50;
-          
-          do {
-            x = Math.floor(Math.random() * gameState.mapSize);
-            y = Math.floor(Math.random() * gameState.mapSize);
-            attempts++;
-            
-            if (attempts >= maxAttempts) break;
-          } while (
-            (x === gameState.hiderPosition.x && y === gameState.hiderPosition.y) ||
-            (x === gameState.goalPosition.x && y === gameState.goalPosition.y) ||
-            gameState.specialTiles.firewalls.some(t => t.x === x && t.y === y) ||
-            calculateDistance({x, y}, gameState.hiderPosition) < 3
-          );
-          
-          gameState.seekerPositions.push({ x, y });
-        }
-        
-        createMap();
-      } else {
-        // No lives left - game over
-        gameState.gameActive = false;
-        clearInterval(gameState.aiMoveInterval);
-        showLoseModal();
-      }
-    }
-  });
-}
-
-// Show win modal
-function showWinModal() {
-  document.getElementById("winModal").style.display = "flex";
-}
-
-// Show lose modal
-function showLoseModal() {
-  document.getElementById("loseModal").style.display = "flex";
-}
-
-// Close all modals
-function closeModals() {
-  document.getElementById("winModal").style.display = "none";
-  document.getElementById("loseModal").style.display = "none";
-  document.getElementById("upgradeModal").style.display = "none";
-  document.getElementById("pauseModal").style.display = "none";
-  playSound('click');
-}
-
-// Log game actions
-function logAction(message) {
-  const lines = logBox.innerText.split("\n");
-  lines.unshift(message);
-  if (lines.length > 2) lines.pop();
-  logBox.innerText = lines.join("\n");
-}
-
-// Use cloaking ability
-function useCloaking() {
-  if (!gameState.cloakingAvailable || !gameState.gameActive || gameState.isPaused) {
-    logAction("⚠️ Cloaking is on cooldown.");
-    playSound('click');
-    return;
-  }
-  logAction("🕶️ Cloaking activated!");
-  playSound('cloak');
-  gameState.cloakingAvailable = false;
-  startCooldown('cloaking', toolStats.cloaking.cooldown);
-  addActiveEffect('🕶️ Cloaking', toolStats.cloaking.duration);
-
-  // Add visual effect
-  const playerTile = document.querySelector(".hider");
-  if (playerTile) {
-    playerTile.classList.add("cloaking-active");
-    setTimeout(() => {
-      playerTile.classList.remove("cloaking-active");
-    }, toolStats.cloaking.duration * 1000);
-  }
-
-  setTimeout(() => {
-    gameState.cloakingAvailable = true;
-    logAction("🕶️ Cloaking expired.");
-  }, toolStats.cloaking.duration * 1000);
-}
-
-// Plant decoy data
-function plantDecoyData() {
-  if (gameState.decoyPlanted || !gameState.gameActive || gameState.isPaused) {
-    logAction("🛑 Decoy is on cooldown.");
-    playSound('click');
-    return;
-  }
-  logAction("📡 Decoy planted! Confusing AI.");
-  playSound('decoy');
-  gameState.decoyPlanted = true;
-  startCooldown('decoy', toolStats.decoy.cooldown);
-  addActiveEffect('📡 Decoy', toolStats.decoy.duration);
-
-  // Move all seekers to random positions
-  gameState.seekerPositions = gameState.seekerPositions.map(() => ({
-    x: Math.floor(Math.random() * gameState.mapSize),
-    y: Math.floor(Math.random() * gameState.mapSize)
-  }));
-  
-  // Add visual effect
-  const seekers = document.querySelectorAll(".seeker");
-  seekers.forEach(seeker => {
-    const effect = document.createElement("div");
-    effect.className = "decoy-effect";
-    seeker.appendChild(effect);
-    setTimeout(() => effect.remove(), 1000);
-  });
-  
-  createMap();
-
-  setTimeout(() => {
-    gameState.decoyPlanted = false;
-    logAction("📡 Decoy expired.");
-  }, toolStats.decoy.duration * 1000);
-}
-
-// Start cooldown timer for an ability
 function startCooldown(ability, duration) {
-  const button = Array.from(document.querySelectorAll('.dropdown-content button'))
+  const button = Array.from(document.querySelectorAll('.cyber-tool'))
     .find(btn => btn.textContent.includes(toolStats[ability].icon));
   
   if (button) {
@@ -1188,31 +1533,25 @@ function startCooldown(ability, duration) {
   }
 }
 
-// Add active effect indicator
-function addActiveEffect(name, duration) {
-  const effectElement = document.createElement('div');
-  effectElement.className = 'active-effect';
-  effectElement.innerHTML = `${name} <span id="effect-time">${duration}s</span>`;
-  document.body.appendChild(effectElement);
-  
-  let timeLeft = duration;
-  const timer = setInterval(() => {
-    timeLeft--;
-    const timeElement = effectElement.querySelector('#effect-time');
-    if (timeElement) timeElement.textContent = `${timeLeft}s`;
-    
-    if (timeLeft <= 0) {
-      clearInterval(timer);
-      if (effectElement.parentNode) {
-        effectElement.parentNode.removeChild(effectElement);
-      }
-    }
-  }, 1000);
-  
-  setTimeout(() => {
-    if (effectElement.parentNode) {
-      effectElement.parentNode.removeChild(effectElement);
-    }
-    clearInterval(timer);
-  }, duration * 1000);
+function logAction(message) {
+  const lines = logBox.innerText.split("\n");
+  lines.unshift(message);
+  if (lines.length > 2) lines.pop();
+  logBox.innerText = lines.join("\n");
+}
+
+function showWinModal() {
+  document.getElementById("winModal").style.display = "flex";
+}
+
+function showLoseModal() {
+  document.getElementById("loseModal").style.display = "flex";
+}
+
+function closeModals() {
+  document.getElementById("winModal").style.display = "none";
+  document.getElementById("loseModal").style.display = "none";
+  document.getElementById("privacyToolsModal").style.display = "none";
+  document.getElementById("pauseModal").style.display = "none";
+  playSound('click');
 }
