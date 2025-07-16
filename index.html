@@ -1,3 +1,4 @@
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -16,9 +17,6 @@
       <button class="cyber-button" onclick="startGame('hider')">
         <span class="glow-text">INITIATE CLOAK PROTOCOL</span>
       </button>
-      <button class="cyber-button disabled" onclick="startGame('seeker')" disabled>
-        <span class="glow-text">TRACER MODE [LOCKED]</span>
-      </button>
     </div>
     <div class="cyber-controls">
       <button id="musicToggle" class="cyber-button small">
@@ -34,15 +32,15 @@
       <div class="cyber-stats">
         <div class="stat-item" id="scoreDisplay">
           <div class="stat-value" id="scoreValue">0</div>
-          <div class="stat-label"> PRIVACY</div>
+          <div class="stat-label">PRIVACY</div>
         </div>
         <div class="stat-item" id="levelDisplay">
           <div class="stat-value" id="levelValue">1</div>
-          <div class="stat-label"> NETWORK LVL</div>
+          <div class="stat-label">NETWORK</div>
         </div>
         <div class="stat-item" id="coinDisplay">
           <div class="stat-value" id="coinValue">0</div>
-          <div class="stat-label">CLOAK COINS</div>
+          <div class="stat-label">COINS</div>
         </div>
         <div class="stat-item" id="livesDisplay">
           <div class="stat-value" id="livesValue">3</div>
@@ -51,105 +49,178 @@
       </div>
     </div>
 
-    <!-- Main Game Area -->
-    <div class="game-grid">
-      <!-- Left Panel - Tools -->
-      <div class="cyber-panel tools-panel">
-        <div class="panel-title">BASIC TOOLS</div>
-        <div class="cyber-buttons">
-          <button class="cyber-tool" onclick="openPrivacyToolsMarket()">
-            <div class="tool-icon">🛒</div>
-            <div class="tool-name">TOOLS MARKET</div>
-          </button>
-          <button class="cyber-tool" id="pauseBtn" onclick="togglePause()">
-            <div class="tool-icon">⏸️</div>
-            <div class="tool-name">PAUSE</div>
-          </button>
+    <!-- Main Game Container -->
+    <div class="game-container">
+      <!-- Left Side Menu (Desktop) -->
+      <div class="desktop-menu">
+        <div class="cyber-panel tools-panel">
+          <div class="panel-title">TOOLS</div>
+          <div class="cyber-buttons">
+            <button class="cyber-tool" onclick="openPrivacyToolsMarket()">
+              <div class="tool-icon">🛒</div>
+              <div class="tool-name">MARKET</div>
+            </button>
+            <button class="cyber-tool" id="pauseBtn" onclick="togglePause()">
+              <div class="tool-icon">⏸️</div>
+              <div class="tool-name">MENU</div>
+            </button>
+            <button class="cyber-tool" onclick="showSettingsModal()">
+              <div class="tool-icon">⚙️</div>
+              <div class="tool-name">SETTINGS</div>
+            </button>
+            <button class="cyber-tool" onclick="showAboutModal()">
+              <div class="tool-icon">ℹ️</div>
+              <div class="tool-name">ABOUT</div>
+            </button>
+          </div>
         </div>
       </div>
 
-      <!-- Center Panel - Game Map -->
-      <div class="cyber-panel main-panel">
-        <div id="map-container" class="cyber-grid"></div>
+      <!-- Center Game Area -->
+      <div class="main-game-area">
+        <!-- Log Panel -->
+        <div class="cyber-panel log-panel">
+          <div class="panel-title">TRANSACTION LOG</div>
+          <div id="log" class="cyber-log"></div>
+        </div>
+
+        <!-- Game Map -->
+        <div class="game-area">
+          <div id="map-container" class="cyber-grid"></div>
+        </div>
       </div>
 
-      <!-- Right Panel - Inventory -->
-      <div class="cyber-panel inventory-panel">
-        <div class="panel-title">INVENTORY</div>
-        <div id="inventory" class="inventory-grid"></div>
+      <!-- Right Side Inventory -->
+      <div class="inventory-area">
+        <div class="cyber-panel inventory-panel">
+          <div class="panel-title">INVENTORY</div>
+          <div id="inventory" class="inventory-grid"></div>
+        </div>
       </div>
     </div>
 
-    <!-- Bottom Panel - Log and Shop -->
-    <div class="bottom-panels">
-      <div class="cyber-panel log-panel">
-        <div class="panel-title">TRANSACTION LOG</div>
-        <div id="log" class="cyber-log"></div>
-      </div>
-      <div class="cyber-panel shop-panel">
-        <div class="panel-title">ITEM SHOP</div>
-        <div id="shop" class="cyber-shop"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modals -->
-  <div id="winModal" class="cyber-modal">
-    <div class="modal-content cyber-glass">
-      <div class="modal-title">TRANSACTION COMPLETE</div>
-      <div class="modal-message">NETWORK COMPROMISED</div>
-      <div id="coinsEarned" class="modal-detail">+10 CLOAK COINS ACQUIRED</div>
-      <button class="cyber-button" onclick="closeModals()">
-        <span class="glow-text">CONTINUE OPERATION</span>
+    <!-- Mobile Bottom Navigation -->
+    <div class="mobile-nav">
+      <button class="nav-btn" onclick="openPrivacyToolsMarket()">
+        <span class="nav-icon">🛒</span>
+        <span class="nav-label">Market</span>
+      </button>
+      <button class="nav-btn" onclick="togglePause()">
+        <span class="nav-icon">⏸️</span>
+        <span class="nav-label">Menu</span>
+      </button>
+      <button class="nav-btn" onclick="showSettingsModal()">
+        <span class="nav-icon">⚙️</span>
+        <span class="nav-label">Settings</span>
+      </button>
+      <button class="nav-btn" onclick="showAboutModal()">
+        <span class="nav-icon">ℹ️</span>
+        <span class="nav-label">About</span>
       </button>
     </div>
-  </div>
 
-  <div id="loseModal" class="cyber-modal">
-    <div class="modal-content cyber-glass">
-      <div class="modal-title red-glow">DETECTION ALERT</div>
-      <div class="modal-message">PRIVACY BREACHED</div>
-      <div class="modal-detail">TRACED BY <span id="caughtByEnemy" class="red-glow">[...]</span></div>
-      <div id="detectionMethod" class="modal-technical">[...]</div>
-      <div class="modal-buttons">
-        <button class="cyber-button" onclick="newGame()">
-          <span class="glow-text">NEW SESSION</span>
-        </button>
-        <button class="cyber-button" onclick="returnToMainMenu()">
-          <span class="glow-text">TERMINATE</span>
-        </button>
-        <button class="cyber-button" onclick="buyLifeInGameOver()">
-          <span class="glow-text">REBOOT (30 CLOAK COINS)</span>
+    <!-- Modals -->
+    <div id="winModal" class="cyber-modal">
+      <div class="modal-content cyber-glass">
+        <div class="modal-title">TRANSACTION COMPLETE</div>
+        <div class="modal-message">NETWORK COMPROMISED</div>
+        <div id="coinsEarned" class="modal-detail">+10 CLOAK COINS ACQUIRED</div>
+        <button class="cyber-button" onclick="closeModals()">
+          <span class="glow-text">CONTINUE OPERATION</span>
         </button>
       </div>
     </div>
-  </div>
 
-  <!-- Privacy Tools Market Modal -->
-  <div id="privacyToolsModal" class="cyber-modal">
-    <div class="modal-content cyber-glass">
-      <div class="modal-title">PRIVACY TOOLS MARKET</div>
-      <div id="privacy-tools-list" class="upgrade-grid"></div>
-      <button class="cyber-button" onclick="closePrivacyToolsMarket()">
-        <span class="glow-text">CLOSE MARKET</span>
-      </button>
+    <div id="loseModal" class="cyber-modal">
+      <div class="modal-content cyber-glass">
+        <div class="modal-title red-glow">DETECTION ALERT</div>
+        <div class="modal-message">PRIVACY BREACHED</div>
+        <div class="modal-detail">TRACED BY <span id="caughtByEnemy" class="red-glow">[...]</span></div>
+        <div id="detectionMethod" class="modal-technical">[...]</div>
+        <div class="modal-buttons">
+          <button class="cyber-button" onclick="newGame()">
+            <span class="glow-text">NEW SESSION</span>
+          </button>
+          <button class="cyber-button" onclick="returnToMainMenu()">
+            <span class="glow-text">TERMINATE</span>
+          </button>
+          <button class="cyber-button" onclick="buyLifeInGameOver()">
+            <span class="glow-text">REBOOT (30 CLOAK COINS)</span>
+          </button>
+        </div>
+      </div>
     </div>
-  </div>
 
-  <!-- Pause Modal -->
-  <div id="pauseModal" class="cyber-modal">
-    <div class="modal-content cyber-glass">
-      <div class="modal-title">SYSTEM PAUSED</div>
-      <div class="modal-buttons">
-        <button class="cyber-button" onclick="togglePause()">
-          <span class="glow-text">RESUME OPERATION</span>
+    <!-- Privacy Tools Market Modal -->
+    <div id="privacyToolsModal" class="cyber-modal">
+      <div class="modal-content cyber-glass">
+        <div class="modal-title">PRIVACY TOOLS MARKET</div>
+        <div id="privacy-tools-list" class="upgrade-grid"></div>
+        <button class="cyber-button" onclick="closePrivacyToolsMarket()">
+          <span class="glow-text">CLOSE MARKET</span>
         </button>
-        <button class="cyber-button" onclick="resetGame()">
-          <span class="glow-text">RESTART LEVEL</span>
+      </div>
+    </div>
+
+    <!-- About Modal -->
+    <div id="aboutModal" class="cyber-modal">
+      <div class="modal-content cyber-glass">
+        <div class="modal-title">ABOUT CLOAKER</div>
+        <div class="modal-message">PRIVACY PROTOCOL SIMULATOR</div>
+        <div class="modal-technical">
+          A cyber stealth game where you navigate networks while avoiding detection.
+          Collect data nodes, use privacy tools, and reach the goal undetected.
+        </div>
+        <button class="cyber-button" onclick="closeAboutModal()">
+          <span class="glow-text">CLOSE</span>
         </button>
-        <button class="cyber-button" onclick="returnToMainMenu()">
-          <span class="glow-text">TERMINATE SESSION</span>
+      </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="cyber-modal">
+      <div class="modal-content cyber-glass">
+        <div class="modal-title">SETTINGS</div>
+        
+        <div class="settings-option">
+          <div class="settings-label">Music</div>
+          <label class="switch">
+            <input type="checkbox" id="musicToggleSetting" checked>
+            <span class="slider round"></span>
+          </label>
+          <div class="settings-status" id="musicStatus">ON</div>
+        </div>
+        
+        <div class="settings-option">
+          <div class="settings-label">Sound Effects</div>
+          <label class="switch">
+            <input type="checkbox" id="fxToggleSetting" checked>
+            <span class="slider round"></span>
+          </label>
+          <div class="settings-status" id="fxStatus">ON</div>
+        </div>
+        
+        <button class="cyber-button" onclick="closeSettingsModal()">
+          <span class="glow-text">CLOSE</span>
         </button>
+      </div>
+    </div>
+
+    <!-- Pause Modal -->
+    <div id="pauseModal" class="cyber-modal">
+      <div class="modal-content cyber-glass">
+        <div class="modal-title">SYSTEM PAUSED</div>
+        <div class="modal-buttons">
+          <button class="cyber-button" onclick="togglePause()">
+            <span class="glow-text">RESUME OPERATION</span>
+          </button>
+          <button class="cyber-button" onclick="resetGame()">
+            <span class="glow-text">RESTART LEVEL</span>
+          </button>
+          <button class="cyber-button" onclick="returnToMainMenu()">
+            <span class="glow-text">TERMINATE SESSION</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -170,77 +241,96 @@
 
   <script src="game.js"></script>
 
-<script>
-  // Initialize the game when everything is loaded
-  document.addEventListener('DOMContentLoaded', () => {
-    initGame();
-    
-    // Add tooltips to inventory items
-    document.querySelectorAll('.inventory-item').forEach(item => {
-      item.addEventListener('mouseenter', () => {
-        const tooltip = item.querySelector('.tooltip-inv');
-        if (tooltip) {
-          tooltip.style.visibility = 'visible';
-          tooltip.style.opacity = '1';
+  <script>
+    // Initialize the game when everything is loaded
+    document.addEventListener('DOMContentLoaded', () => {
+      initGame();
+      
+      // Add swipe support for mobile
+      let touchStartX = 0;
+      let touchStartY = 0;
+      let touchEndX = 0;
+      let touchEndY = 0;
+
+      document.addEventListener('touchstart', e => {
+        touchStartX = e.changedTouches[0].screenX;
+        touchStartY = e.changedTouches[0].screenY;
+      }, false);
+
+      document.addEventListener('touchend', e => {
+        if (!gameState.session.gameActive || gameState.session.isPaused) return;
+        
+        touchEndX = e.changedTouches[0].screenX;
+        touchEndY = e.changedTouches[0].screenY;
+        
+        const dx = touchEndX - touchStartX;
+        const dy = touchEndY - touchStartY;
+        
+        // Only register swipe if movement is significant
+        if (Math.abs(dx) > 50 || Math.abs(dy) > 50) {
+          const { x, y } = gameState.player.position;
+          
+          if (Math.abs(dx) > Math.abs(dy)) {
+            // Horizontal swipe
+            if (dx > 0) {
+              // Right swipe
+              if (x < gameState.level.mapSize - 1) movePlayer(x + 1, y);
+            } else {
+              // Left swipe
+              if (x > 0) movePlayer(x - 1, y);
+            }
+          } else {
+            // Vertical swipe
+            if (dy > 0) {
+              // Down swipe
+              if (y < gameState.level.mapSize - 1) movePlayer(x, y + 1);
+            } else {
+              // Up swipe
+              if (y > 0) movePlayer(x, y - 1);
+            }
+          }
         }
+      }, false);
+      
+      // Settings toggle event listeners
+      document.getElementById("musicToggleSetting").addEventListener('change', function() {
+        gameState.settings.musicEnabled = this.checked;
+        toggleMusic();
       });
       
-      item.addEventListener('mouseleave', () => {
-        const tooltip = item.querySelector('.tooltip-inv');
-        if (tooltip) {
-          tooltip.style.visibility = 'hidden';
-          tooltip.style.opacity = '0';
-        }
+      document.getElementById("fxToggleSetting").addEventListener('change', function() {
+        gameState.settings.fxEnabled = this.checked;
+        updateSettingsStatus();
       });
     });
 
-    // Add swipe support for mobile
-    let touchStartX = 0;
-    let touchStartY = 0;
-    let touchEndX = 0;
-    let touchEndY = 0;
+    function showAboutModal() {
+      document.getElementById("aboutModal").style.display = "flex";
+      playSound('click');
+    }
 
-    document.addEventListener('touchstart', e => {
-      touchStartX = e.changedTouches[0].screenX;
-      touchStartY = e.changedTouches[0].screenY;
-    }, false);
+    function closeAboutModal() {
+      document.getElementById("aboutModal").style.display = "none";
+      playSound('click');
+    }
 
-    document.addEventListener('touchend', e => {
-      if (!gameState.session.gameActive || gameState.session.isPaused) return;
-      
-      touchEndX = e.changedTouches[0].screenX;
-      touchEndY = e.changedTouches[0].screenY;
-      
-      const dx = touchEndX - touchStartX;
-      const dy = touchEndY - touchStartY;
-      
-      // Only register swipe if movement is significant
-      if (Math.abs(dx) > 50 || Math.abs(dy) > 50) {
-        const { x, y } = gameState.player.position;
-        
-        if (Math.abs(dx) > Math.abs(dy)) {
-          // Horizontal swipe
-          if (dx > 0) {
-            // Right swipe
-            if (x < gameState.level.mapSize - 1) movePlayer(x + 1, y);
-          } else {
-            // Left swipe
-            if (x > 0) movePlayer(x - 1, y);
-          }
-        } else {
-          // Vertical swipe
-          if (dy > 0) {
-            // Down swipe
-            if (y < gameState.level.mapSize - 1) movePlayer(x, y + 1);
-          } else {
-            // Up swipe
-            if (y > 0) movePlayer(x, y - 1);
-          }
-        }
-      }
-    }, false);
-  });
-</script>
+    function showSettingsModal() {
+      document.getElementById("settingsModal").style.display = "flex";
+      document.getElementById("musicToggleSetting").checked = gameState.settings.musicEnabled;
+      document.getElementById("fxToggleSetting").checked = gameState.settings.fxEnabled;
+      updateSettingsStatus();
+      playSound('click');
+    }
 
+    function closeSettingsModal() {
+      document.getElementById("settingsModal").style.display = "none";
+      playSound('click');
+    }
+
+    function updateSettingsStatus() {
+      document.getElementById("musicStatus").textContent = gameState.settings.musicEnabled ? "ON" : "OFF";
+      document.getElementById("fxStatus").textContent = gameState.settings.fxEnabled ? "ON" : "OFF";
+    }
+  </script>
 </body>
 </html>

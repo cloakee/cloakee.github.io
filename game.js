@@ -1,3 +1,4 @@
+// game.js
 // =============================================
 // Game State Management - Refactored Structure
 // =============================================
@@ -38,7 +39,6 @@ const gameState = {
   session: {
     gameActive: false,
     isPaused: false,
-    musicEnabled: true,
     lastStepTime: 0,
     aiMoveInterval: null,
     timers: {}
@@ -50,6 +50,12 @@ const gameState = {
     speed: 3000,
     intelligence: 1,
     detectionRange: 3
+  },
+
+  // Settings State
+  settings: {
+    musicEnabled: true,
+    fxEnabled: true
   }
 };
 
@@ -132,29 +138,17 @@ const toolStats = {
     costInc: 12,
     cooldown: 25,
     owned: false
+  },
+  usb: {
+    name: "Bootable USB",
+    icon: "🔌",
+    desc: "Reveals the goal location for 3 seconds.",
+    costBase: 15,
+    costInc: 5,
+    cooldown: 30,
+    owned: false
   }
 };
-
-// =============================================
-// Shop Items
-// =============================================
-
-const shopItems = [
-  { 
-    name: "Bootable USB", 
-    icon: "🔌", 
-    desc: "Reveals the goal location for 3 seconds.", 
-    cost: 15, 
-    action: useUSBAdapter 
-  },
-  { 
-    name: "Extra Life", 
-    icon: "❤️", 
-    desc: "Get an additional life.", 
-    cost: 30, 
-    action: addLife 
-  }
-];
 
 // =============================================
 // Enemies and Detection Methods
@@ -211,7 +205,6 @@ function initGame() {
   updateLevelDisplay(1);
   updateCoinsDisplay(0);
   updateLivesDisplay(3);
-  initShop();
   
   // Add keyboard event listeners
   document.addEventListener('keydown', handleKeyPress);
@@ -223,7 +216,20 @@ function initGame() {
 
   // Initialize music toggle
   document.getElementById("musicToggle").addEventListener('click', toggleMusic);
-  if (gameState.session.musicEnabled) {
+  document.getElementById("musicToggleMobile").addEventListener('click', toggleMusic);
+  
+  // Initialize settings toggles
+  document.getElementById("musicToggleSetting").addEventListener('change', function() {
+    gameState.settings.musicEnabled = this.checked;
+    toggleMusic();
+  });
+  
+  document.getElementById("fxToggleSetting").addEventListener('change', function() {
+    gameState.settings.fxEnabled = this.checked;
+    updateSettingsStatus();
+  });
+  
+  if (gameState.settings.musicEnabled) {
     sounds.background.loop = true;
     sounds.background.volume = 0.3;
     sounds.background.play();
@@ -263,6 +269,7 @@ function initEventListeners() {
 }
 
 function playSound(soundName, volume = 0.7) {
+  if (!gameState.settings.fxEnabled && soundName !== 'background') return;
   if (sounds[soundName]) {
     sounds[soundName].volume = volume;
     sounds[soundName].currentTime = 0;
@@ -271,16 +278,47 @@ function playSound(soundName, volume = 0.7) {
 }
 
 function toggleMusic() {
-  gameState.session.musicEnabled = !gameState.session.musicEnabled;
-  if (gameState.session.musicEnabled) {
+  gameState.settings.musicEnabled = !gameState.settings.musicEnabled;
+  if (gameState.settings.musicEnabled) {
     sounds.background.loop = true;
     sounds.background.volume = 0.3;
     sounds.background.play();
     document.getElementById("musicToggle").innerHTML = '<span class="glow-text">🔊 AUDIO: ACTIVE</span>';
+    document.getElementById("musicToggleMobile").innerHTML = '<span class="mobile-icon">🔊</span><span class="mobile-label">AUDIO</span>';
   } else {
     sounds.background.pause();
     document.getElementById("musicToggle").innerHTML = '<span class="glow-text">🔇 AUDIO: MUTED</span>';
+    document.getElementById("musicToggleMobile").innerHTML = '<span class="mobile-icon">🔇</span><span class="mobile-label">AUDIO</span>';
   }
+  updateSettingsStatus();
+}
+
+function showSettingsModal() {
+  document.getElementById("settingsModal").style.display = "flex";
+  document.getElementById("musicToggleSetting").checked = gameState.settings.musicEnabled;
+  document.getElementById("fxToggleSetting").checked = gameState.settings.fxEnabled;
+  updateSettingsStatus();
+  playSound('click');
+}
+
+function closeSettingsModal() {
+  document.getElementById("settingsModal").style.display = "none";
+  playSound('click');
+}
+
+function updateSettingsStatus() {
+  document.getElementById("musicStatus").textContent = gameState.settings.musicEnabled ? "ON" : "OFF";
+  document.getElementById("fxStatus").textContent = gameState.settings.fxEnabled ? "ON" : "OFF";
+}
+
+function showAboutModal() {
+  document.getElementById("aboutModal").style.display = "flex";
+  playSound('click');
+}
+
+function closeAboutModal() {
+  document.getElementById("aboutModal").style.display = "none";
+  playSound('click');
 }
 
 // =============================================
@@ -335,7 +373,7 @@ function togglePause() {
     gameState.session.aiMoveInterval = setInterval(moveSeekerAI, gameState.ai.speed);
     document.getElementById("pauseModal").style.display = "none";
     logAction("▶️ Game resumed");
-    if (gameState.session.musicEnabled) sounds.background.play();
+    if (gameState.settings.musicEnabled) sounds.background.play();
   }
 }
 
@@ -388,7 +426,7 @@ function newGame() {
   // Close modals and start fresh
   closeModals();
   resetGame();
-  if (gameState.session.musicEnabled) sounds.background.play();
+  if (gameState.settings.musicEnabled) sounds.background.play();
 }
 
 function buyLifeInGameOver() {
@@ -426,7 +464,7 @@ function startGame(role) {
 
   resetGame();
   initInventory();
-  if (gameState.session.musicEnabled) sounds.background.play();
+  if (gameState.settings.musicEnabled) sounds.background.play();
 }
 
 // =============================================
@@ -1102,6 +1140,12 @@ function checkWin() {
 function checkCaught() {
   if (!gameState.session.gameActive || gameState.session.isPaused) return;
 
+  // Don't get caught if on goal tile
+  if (gameState.player.position.x === gameState.level.goalPosition.x && 
+      gameState.player.position.y === gameState.level.goalPosition.y) {
+    return;
+  }
+
   gameState.ai.seekers.forEach(seeker => {
     if (seeker.x === gameState.player.position.x && seeker.y === gameState.player.position.y) {
       // Check if cloaked (30% chance to still get caught when cloaked)
@@ -1409,6 +1453,7 @@ function buyTool(toolName) {
       else if (toolName === 'Tor Trail') useTorTrail();
       else if (toolName === 'VPN') useVPN();
       else if (toolName === 'CC Cleaner') useCCCleanser();
+      else if (toolName === 'Bootable USB') useUSBAdapter();
     }, tool.icon);
     
     updateCoinsDisplay(gameState.player.coins);
@@ -1445,7 +1490,7 @@ function getUpgradeCost(tool) {
 }
 
 // =============================================
-// Inventory and Shop Functions
+// Inventory Functions
 // =============================================
 
 function initInventory() {
@@ -1465,44 +1510,6 @@ function addToInventory(itemName, description, useFunction, icon = "❓") {
   item.onclick = useFunction;
   inv.appendChild(item);
   gameState.player.inventory.push({ name: itemName, description, useFunction, icon });
-}
-
-function initShop() {
-  const shop = document.getElementById("shop");
-  shop.innerHTML = "";
-
-  shopItems.forEach(item => {
-    const div = document.createElement("div");
-    div.className = "shop-item";
-    div.innerHTML = `
-      <div class="shop-icon">${item.icon}</div>
-      <div>${item.name}</div>
-      <div>${item.cost} CREDITS</div>
-      <span class="tooltip-inv">${item.desc}</span>
-    `;
-    div.onclick = () => buyItem(item);
-    shop.appendChild(div);
-  });
-}
-
-function buyItem(item) {
-  if (gameState.player.coins < item.cost) {
-    logAction(`🪙 Not enough coins to buy ${item.name}`);
-    playSound('click');
-    return;
-  }
-
-  gameState.player.coins -= item.cost;
-  updateCoinsDisplay(gameState.player.coins);
-  if (item.action) {
-    if (item.name === "Extra Life") {
-      item.action();
-    } else {
-      addToInventory(item.name, item.desc, item.action, item.icon);
-    }
-  }
-  logAction(`🛍️ Bought: ${item.name}`);
-  playSound('coin');
 }
 
 // =============================================
@@ -1553,5 +1560,7 @@ function closeModals() {
   document.getElementById("loseModal").style.display = "none";
   document.getElementById("privacyToolsModal").style.display = "none";
   document.getElementById("pauseModal").style.display = "none";
+  document.getElementById("settingsModal").style.display = "none";
+  document.getElementById("aboutModal").style.display = "none";
   playSound('click');
 }
