@@ -198,6 +198,12 @@ const events = {
 // =============================================
 
 function initGame() {
+  // Load saved settings
+  const savedSettings = localStorage.getItem('gameSettings');
+  if (savedSettings) {
+    gameState.settings = JSON.parse(savedSettings);
+  }
+  
   initEventListeners();
   
   // Initialize displays
@@ -216,7 +222,6 @@ function initGame() {
 
   // Initialize music toggle
   document.getElementById("musicToggle").addEventListener('click', toggleMusic);
-  document.getElementById("musicToggleMobile").addEventListener('click', toggleMusic);
   
   // Initialize settings toggles
   document.getElementById("musicToggleSetting").addEventListener('change', function() {
@@ -284,13 +289,15 @@ function toggleMusic() {
     sounds.background.volume = 0.3;
     sounds.background.play();
     document.getElementById("musicToggle").innerHTML = '<span class="glow-text">🔊 AUDIO: ACTIVE</span>';
-    document.getElementById("musicToggleMobile").innerHTML = '<span class="mobile-icon">🔊</span><span class="mobile-label">AUDIO</span>';
   } else {
     sounds.background.pause();
     document.getElementById("musicToggle").innerHTML = '<span class="glow-text">🔇 AUDIO: MUTED</span>';
-    document.getElementById("musicToggleMobile").innerHTML = '<span class="mobile-icon">🔇</span><span class="mobile-label">AUDIO</span>';
   }
   updateSettingsStatus();
+}
+
+function saveSettings() {
+  localStorage.setItem('gameSettings', JSON.stringify(gameState.settings));
 }
 
 function showSettingsModal() {
@@ -302,6 +309,7 @@ function showSettingsModal() {
 }
 
 function closeSettingsModal() {
+  saveSettings();
   document.getElementById("settingsModal").style.display = "none";
   playSound('click');
 }
@@ -422,6 +430,7 @@ function newGame() {
   
   // Clear inventory
   document.getElementById("inventory").innerHTML = '';
+  document.getElementById("desktop-inventory").innerHTML = '';
   
   // Close modals and start fresh
   closeModals();
@@ -1490,25 +1499,45 @@ function getUpgradeCost(tool) {
 }
 
 // =============================================
-// Inventory Functions
+// Inventory Functions - Updated for both mobile and desktop
 // =============================================
 
 function initInventory() {
   const inv = document.getElementById("inventory");
-  inv.innerHTML = '';
+  const desktopInv = document.getElementById("desktop-inventory");
+  if (inv) inv.innerHTML = '';
+  if (desktopInv) desktopInv.innerHTML = '';
 }
 
 function addToInventory(itemName, description, useFunction, icon = "❓") {
+  // Add to mobile inventory
   const inv = document.getElementById("inventory");
-  const item = document.createElement("div");
-  item.className = "inventory-item";
-  item.innerHTML = `
-    <div class="inventory-icon">${icon}</div>
-    <div>${itemName}</div>
-    <span class="tooltip-inv">${description}</span>
-  `;
-  item.onclick = useFunction;
-  inv.appendChild(item);
+  if (inv) {
+    const item = document.createElement("div");
+    item.className = "inventory-item";
+    item.innerHTML = `
+      <div class="inventory-icon">${icon}</div>
+      <div>${itemName}</div>
+      <span class="tooltip-inv">${description}</span>
+    `;
+    item.onclick = useFunction;
+    inv.appendChild(item);
+  }
+
+  // Add to desktop inventory
+  const desktopInv = document.getElementById("desktop-inventory");
+  if (desktopInv) {
+    const item = document.createElement("div");
+    item.className = "inventory-item";
+    item.innerHTML = `
+      <div class="inventory-icon">${icon}</div>
+      <div>${itemName}</div>
+      <span class="tooltip-inv">${description}</span>
+    `;
+    item.onclick = useFunction;
+    desktopInv.appendChild(item);
+  }
+
   gameState.player.inventory.push({ name: itemName, description, useFunction, icon });
 }
 
