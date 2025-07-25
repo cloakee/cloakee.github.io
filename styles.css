@@ -386,21 +386,21 @@ body {
 /* Mobile Inventory */
 .mobile-inventory {
   width: 100%;
-  margin-top: 4px;
+  margin-top: 15px;
   display: block;
 }
 
 .inventory-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
-  gap: 4px;
+  gap: 8px;
 }
 
 .inventory-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 4px;
+  padding: 8px;
   background: rgba(20, 30, 50, 0.5);
   border: 1px solid rgba(0, 240, 255, 0.2);
   border-radius: 4px;
@@ -415,8 +415,8 @@ body {
 }
 
 .inventory-icon {
-  font-size: 1rem;
-  margin-bottom: 3px;
+  font-size: 1.5rem;
+  margin-bottom: 5px;
 }
 
 /* Tool Buttons */
@@ -460,11 +460,11 @@ body {
   border: 1px solid rgba(0, 240, 255, 0.1);
   border-radius: 4px;
   padding: 10px;
-  height: 100px;
+  height: 150px;
   overflow-y: auto;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 1rem;
-  line-height: 1;
+  font-size: 0.8rem;
+  line-height: 1.4;
 }
 
 /* Mobile Navigation */
@@ -475,7 +475,7 @@ body {
   right: 0;
   display: flex;
   justify-content: space-around;
-  padding: 5px 0;
+  padding: 10px 0;
   background: var(--bg-dark);
   border-top: 1px solid var(--glass-border);
   z-index: 100;

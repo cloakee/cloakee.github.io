@@ -1,6 +1,6 @@
 // game.js
 // =============================================
-// Game State Management - Enhanced Tools Version
+// Game State Management - Refactored Structure
 // =============================================
 
 const gameState = {
@@ -24,7 +24,7 @@ const gameState = {
   // Level State
   level: {
     current: 1,
-    mapSize: 6,
+    mapSize: 6, // Fixed 6x6 grid
     goalPosition: { x: 2, y: 2 },
     specialTiles: {
       firewalls: [],
@@ -32,8 +32,7 @@ const gameState = {
       teleports: [],
       portals: []
     },
-    detectionRisk: 0,
-    decoys: []
+    detectionRisk: 0
   },
 
   // Game State
@@ -42,8 +41,7 @@ const gameState = {
     isPaused: false,
     lastStepTime: 0,
     aiMoveInterval: null,
-    timers: {},
-    touchStart: null
+    timers: {}
   },
 
   // AI State
@@ -51,8 +49,7 @@ const gameState = {
     seekers: [],
     speed: 3000,
     intelligence: 1,
-    detectionRange: 3,
-    confused: false
+    detectionRange: 3
   },
 
   // Settings State
@@ -82,83 +79,74 @@ const sounds = {
 };
 
 // =============================================
-// Enhanced Tool Stats
+// Tool Stats
 // =============================================
 
 const toolStats = {
   cloaking: { 
     name: "Cloaking", 
     icon: "🕶️", 
-    desc: "Phase through enemies without getting caught", 
+    desc: "Make yourself invisible to enemies.", 
     level: 1, 
     duration: 8, 
     costBase: 15, 
     costInc: 8,
     cooldown: 25,
-    owned: false,
-    power: "Phase through enemies"
+    owned: false
   },
   decoy: { 
     name: "Decoy", 
-    icon: "👤", 
-    desc: "Plant fake hiders to confuse enemies", 
+    icon: "🧭", 
+    desc: "Plant fake data to confuse enemies.", 
     level: 1, 
     duration: 12, 
     costBase: 15, 
     costInc: 8,
     cooldown: 30,
-    owned: false,
-    power: "Creates 1 fake hider",
-    decoyCount: 1
+    owned: false
   },
   torTrail: { 
     name: "Tor Trail", 
     icon: "🌀", 
-    desc: "Allows diagonal movement for a short time", 
+    desc: "Allows diagonal movement for a short time.", 
     level: 1, 
     moves: 1, 
     costBase: 20, 
     costInc: 10,
     duration: 8,
     cooldown: 35,
-    owned: false,
-    power: "Diagonal moves"
+    owned: false
   },
   vpn: { 
     name: "VPN", 
     icon: "🛡️", 
-    desc: "Jump over multiple tiles", 
+    desc: "Short-term invisibility with reduced cooldown.", 
     level: 1, 
-    jumpDistance: 1, 
+    duration: 6, 
     costBase: 12, 
     costInc: 6,
-    duration: 8,
     cooldown: 20,
-    owned: false,
-    power: "Jump 1 tile"
+    owned: false
   },
   ccCleaner: { 
     name: "CC Cleaner", 
     icon: "🧯", 
-    desc: "Teleport all enemies to random locations", 
+    desc: "Randomly teleports all enemies.", 
     level: 1, 
     power: 1, 
     costBase: 25, 
     costInc: 12,
     cooldown: 25,
-    owned: false,
-    power: "Teleport enemies"
+    owned: false
   },
   usb: {
     name: "Bootable USB",
     icon: "🔌",
-    desc: "Instantly teleport to a safe location",
+    desc: "Reveals the goal location for 3 seconds.",
     costBase: 15,
     costInc: 5,
     cooldown: 30,
-    owned: false,
-    power: "Teleport 1 tile",
-    teleportDistance: 1
+    owned: false
   }
 };
 
@@ -260,75 +248,6 @@ function initGame() {
     meter.innerHTML = '<div class="detection-level"></div>';
     gameUI.appendChild(meter);
   }
-
-  // Improved touch event handling
-  document.addEventListener('touchstart', handleTouchStart, { passive: false });
-  document.addEventListener('touchmove', handleTouchMove, { passive: false });
-  document.addEventListener('touchend', handleTouchEnd, { passive: false });
-}
-
-function handleTouchStart(e) {
-  if (!gameState.session.gameActive || gameState.session.isPaused) return;
-  
-  // Prevent default to stop page scrolling/reloading
-  e.preventDefault();
-  
-  const touch = e.touches[0];
-  gameState.session.touchStart = {
-    x: touch.clientX,
-    y: touch.clientY,
-    time: Date.now()
-  };
-}
-
-function handleTouchMove(e) {
-  if (!gameState.session.touchStart) return;
-  e.preventDefault(); // Prevent page scrolling
-}
-
-function handleTouchEnd(e) {
-  if (!gameState.session.gameActive || gameState.session.isPaused || !gameState.session.touchStart) return;
-  
-  e.preventDefault();
-  
-  const touch = e.changedTouches[0];
-  const endX = touch.clientX;
-  const endY = touch.clientY;
-  const startX = gameState.session.touchStart.x;
-  const startY = gameState.session.touchStart.y;
-  
-  const dx = endX - startX;
-  const dy = endY - startY;
-  
-  // Only register swipe if movement is significant and fast enough
-  const dist = Math.sqrt(dx * dx + dy * dy);
-  const time = Date.now() - gameState.session.touchStart.time;
-  
-  if (dist > 30 && time < 300) { // Minimum 30px movement in under 300ms
-    const { x, y } = gameState.player.position;
-    
-    if (Math.abs(dx) > Math.abs(dy)) {
-      // Horizontal swipe
-      if (dx > 0) {
-        // Right swipe
-        if (x < gameState.level.mapSize - 1) movePlayer(x + 1, y);
-      } else {
-        // Left swipe
-        if (x > 0) movePlayer(x - 1, y);
-      }
-    } else {
-      // Vertical swipe
-      if (dy > 0) {
-        // Down swipe
-        if (y < gameState.level.mapSize - 1) movePlayer(x, y + 1);
-      } else {
-        // Up swipe
-        if (y > 0) movePlayer(x, y - 1);
-      }
-    }
-  }
-  
-  gameState.session.touchStart = null;
 }
 
 function initEventListeners() {
@@ -438,9 +357,6 @@ function handleKeyPress(e) {
     case 'd':
       if (gameState.player.ownedTools.decoy) plantDecoyData();
       break;
-    case 'j': // Added jump key binding
-      if (gameState.player.ownedTools.vpn) useVPN();
-      break;
     case 'm':
       openPrivacyToolsMarket();
       break;
@@ -498,8 +414,7 @@ function newGame() {
     mapSize: 6,
     goalPosition: { x: 2, y: 2 },
     specialTiles: { firewalls: [], dataNodes: [], teleports: [], portals: [] },
-    detectionRisk: 0,
-    decoys: []
+    detectionRisk: 0
   };
   
   // Reset tool ownership
@@ -515,7 +430,6 @@ function newGame() {
   
   // Clear inventory
   document.getElementById("inventory").innerHTML = '';
-  document.getElementById("desktop-inventory").innerHTML = '';
   
   // Close modals and start fresh
   closeModals();
@@ -590,77 +504,7 @@ function updateLivesDisplay(lives) {
 }
 
 // =============================================
-// Enhanced Movement System
-// =============================================
-
-function movePlayer(x, y) {
-  if (gameState.player.role !== "hider" || !gameState.session.gameActive || gameState.session.isPaused) return;
-
-  // Check if target position is a firewall
-  const isFirewall = gameState.level.specialTiles.firewalls.some(t => t.x === x && t.y === y);
-  if (isFirewall) {
-    logAction("🚧 Firewall blocked your path!");
-    playSound('click');
-    return;
-  }
-
-  const dx = Math.abs(x - gameState.player.position.x);
-  const dy = Math.abs(y - gameState.player.position.y);
-
-  // Check movement rules based on active effects
-  const canMoveDiagonally = gameState.player.activeEffects.some(effect => effect.name === '🌀 Tor Trail');
-  const vpnEffect = gameState.player.activeEffects.find(effect => effect.name === '🛡️ VPN');
-  const isVPNJump = vpnEffect && (dx === vpnEffect.jumpDistance || dy === vpnEffect.jumpDistance);
-
-  if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1) || 
-      (canMoveDiagonally && dx === 1 && dy === 1) ||
-      isVPNJump) {
-    
-    // Check if moving through enemy with cloak
-    const seekerAtTarget = gameState.ai.seekers.some(s => s.x === x && s.y === y);
-    if (seekerAtTarget && !gameState.player.activeEffects.some(effect => effect.name === '🕶️ Cloaking')) {
-      logAction("⚠️ Can't move through enemies without cloak!");
-      playSound('click');
-      return;
-    }
-
-    // Play movement sound
-    playSound(Math.random() > 0.5 ? 'footstep1' : 'footstep2', 0.3);
-    gameState.session.lastStepTime = Date.now();
-
-    // Animate movement
-    animateMovement(x, y);
-  } else {
-    logAction("⚠️ Can't move there.");
-    playSound('click');
-  }
-}
-
-function animateMovement(x, y) {
-  const oldTile = document.querySelector(`.tile[data-x="${gameState.player.position.x}"][data-y="${gameState.player.position.y}"]`);
-  const newTile = document.querySelector(`.tile[data-x="${x}"][data-y="${y}"]`);
-  
-  if (oldTile && newTile) {
-    oldTile.classList.remove("hider");
-    oldTile.classList.add("move-from");
-    newTile.classList.add("move-to");
-    
-    setTimeout(() => {
-      oldTile.classList.remove("move-from");
-      newTile.classList.remove("move-to");
-      gameState.player.position = { x, y };
-      events.emit('player-moved', { x, y });
-      createMap();
-    }, 150);
-  } else {
-    gameState.player.position = { x, y };
-    events.emit('player-moved', { x, y });
-    createMap();
-  }
-}
-
-// =============================================
-// Map and Tile Functions
+// Map and Movement Functions
 // =============================================
 
 function generateSpecialTiles() {
@@ -765,7 +609,7 @@ function generateSpecialTiles() {
       gameState.level.specialTiles.firewalls.some(t => t.x === x2 && t.y === y2) ||
       gameState.level.specialTiles.dataNodes.some(t => t.x === x2 && t.y === y2) ||
       gameState.ai.seekers.some(s => s.x === x2 && s.y === y2) ||
-      calculateDistance({x: x1, y: y1}, {x: x2, y: y2}) < 3
+      calculateDistance({x: x1, y: y1}, {x: x2, y: y2}) < 3 // Ensure teleport pairs aren't too close
     );
 
     if (attempts1 < maxAttempts && attempts2 < maxAttempts) {
@@ -809,7 +653,7 @@ function updatePortals() {
         
         gameState.level.specialTiles.portals.push({
           x, y,
-          expires: Date.now() + 5000
+          expires: Date.now() + 5000 // Lasts 5 seconds
         });
       }
     }
@@ -820,6 +664,57 @@ function updatePortals() {
   gameState.level.specialTiles.portals = gameState.level.specialTiles.portals.filter(
     portal => portal.expires > now
   );
+}
+
+function movePlayer(x, y) {
+  if (gameState.player.role !== "hider" || !gameState.session.gameActive || gameState.session.isPaused) return;
+
+  // Check if target position is a firewall
+  const isFirewall = gameState.level.specialTiles.firewalls.some(t => t.x === x && t.y === y);
+  if (isFirewall) {
+    logAction("🚧 Firewall blocked your path!");
+    playSound('click');
+    return;
+  }
+
+  const dx = Math.abs(x - gameState.player.position.x);
+  const dy = Math.abs(y - gameState.player.position.y);
+
+  if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1) || 
+      (gameState.player.activeEffects.some(effect => effect.name === '🌀 Tor Trail') && dx === 1 && dy === 1)) {
+    
+    // Play footstep sound with alternating steps
+    const now = Date.now();
+    if (now - gameState.session.lastStepTime > 200) {
+      playSound(Math.random() > 0.5 ? 'footstep1' : 'footstep2', 0.3);
+      gameState.session.lastStepTime = now;
+    }
+
+    // Animate movement
+    const oldTile = document.querySelector(`.tile[data-x="${gameState.player.position.x}"][data-y="${gameState.player.position.y}"]`);
+    const newTile = document.querySelector(`.tile[data-x="${x}"][data-y="${y}"]`);
+    
+    if (oldTile && newTile) {
+      oldTile.classList.remove("hider");
+      oldTile.classList.add("move-from");
+      newTile.classList.add("move-to");
+      
+      setTimeout(() => {
+        oldTile.classList.remove("move-from");
+        newTile.classList.remove("move-to");
+        gameState.player.position = { x, y };
+        events.emit('player-moved', { x, y });
+        createMap();
+      }, 150);
+    } else {
+      gameState.player.position = { x, y };
+      events.emit('player-moved', { x, y });
+      createMap();
+    }
+  } else {
+    logAction("⚠️ Can't move there.");
+    playSound('click');
+  }
 }
 
 function checkTileEffects(x, y) {
@@ -926,7 +821,7 @@ function moveSeekerAI() {
       if (seeker.y > 0) possibleMoves.push({ x: seeker.x, y: seeker.y - 1 });
       if (seeker.y < gameState.level.mapSize - 1) possibleMoves.push({ x: seeker.x, y: seeker.y + 1 });
 
-      // Filter out invalid moves
+      // Filter out firewalls, data nodes, and teleports
       const validMoves = possibleMoves.filter(move => 
         !gameState.level.specialTiles.firewalls.some(fw => fw.x === move.x && fw.y === move.y) &&
         !gameState.level.specialTiles.dataNodes.some(dn => dn.x === move.x && dn.y === move.y) &&
@@ -935,49 +830,25 @@ function moveSeekerAI() {
       );
 
       if (validMoves.length > 0) {
-        // When confused, sometimes target decoys
-        if (gameState.ai.confused && gameState.level.decoys.length > 0 && Math.random() < 0.5) {
-          const decoy = gameState.level.decoys[Math.floor(Math.random() * gameState.level.decoys.length)];
-          const decoyDx = decoy.x - seeker.x;
-          const decoyDy = decoy.y - seeker.y;
-          
-          // Find move that gets closest to decoy
-          let bestMove = validMoves[0];
-          let bestDistance = calculateDistance(bestMove, decoy);
+        // Find move that gets closest to player
+        let bestMove = validMoves[0];
+        let bestDistance = calculateDistance(bestMove, gameState.player.position);
 
-          validMoves.forEach(move => {
-            const currentDistance = calculateDistance(move, decoy);
-            if (currentDistance < bestDistance) {
-              bestMove = move;
-              bestDistance = currentDistance;
-            }
-          });
+        validMoves.forEach(move => {
+          const currentDistance = calculateDistance(move, gameState.player.position);
+          if (currentDistance < bestDistance) {
+            bestMove = move;
+            bestDistance = currentDistance;
+          }
+        });
 
+        // Sometimes make a suboptimal move based on intelligence
+        if (Math.random() > intelligenceFactor) {
+          seeker.x = validMoves[Math.floor(Math.random() * validMoves.length)].x;
+          seeker.y = validMoves[Math.floor(Math.random() * validMoves.length)].y;
+        } else {
           seeker.x = bestMove.x;
           seeker.y = bestMove.y;
-        } 
-        // Otherwise track player
-        else {
-          // Find move that gets closest to player
-          let bestMove = validMoves[0];
-          let bestDistance = calculateDistance(bestMove, gameState.player.position);
-
-          validMoves.forEach(move => {
-            const currentDistance = calculateDistance(move, gameState.player.position);
-            if (currentDistance < bestDistance) {
-              bestMove = move;
-              bestDistance = currentDistance;
-            }
-          });
-
-          // Sometimes make a suboptimal move based on intelligence
-          if (Math.random() > intelligenceFactor) {
-            seeker.x = validMoves[Math.floor(Math.random() * validMoves.length)].x;
-            seeker.y = validMoves[Math.floor(Math.random() * validMoves.length)].y;
-          } else {
-            seeker.x = bestMove.x;
-            seeker.y = bestMove.y;
-          }
         }
       }
     } else if (distance > 0) {
@@ -988,7 +859,7 @@ function moveSeekerAI() {
       if (seeker.y > 0) possibleMoves.push({ x: seeker.x, y: seeker.y - 1 });
       if (seeker.y < gameState.level.mapSize - 1) possibleMoves.push({ x: seeker.x, y: seeker.y + 1 });
 
-      // Filter out invalid moves
+      // Filter out firewalls, data nodes, and teleports
       const validMoves = possibleMoves.filter(move => 
         !gameState.level.specialTiles.firewalls.some(fw => fw.x === move.x && fw.y === move.y) &&
         !gameState.level.specialTiles.dataNodes.some(dn => dn.x === move.x && dn.y === move.y) &&
@@ -1033,10 +904,10 @@ function updateDetectionMeter() {
     detectionRisk = ((maxDetectionRange - closestDistance) / maxDetectionRange) * 100;
     
     // Reduce risk if cloaked
-    if (gameState.player.activeEffects.some(effect => effect.name === '🕶️ Cloaking')) {
-      detectionRisk *= 0.3; // 70% reduction when cloaked
-    } else {
+    if (!gameState.player.activeEffects.some(effect => effect.name === '🕶️ Cloaking')) {
       detectionRisk *= (1 - (gameState.player.stats.stealth * 0.1));
+    } else {
+      detectionRisk *= 0.3; // 70% reduction when cloaked
     }
   }
 
@@ -1105,7 +976,7 @@ function createParticles(position, count, color) {
 }
 
 // =============================================
-// Enhanced Map Rendering
+// Game Map Functions
 // =============================================
 
 function createMap() {
@@ -1119,13 +990,8 @@ function createMap() {
       tile.dataset.x = x;
       tile.dataset.y = y;
       
-      // Check for decoys first (so they appear under other elements)
-      if (gameState.level.decoys.some(d => d.x === x && d.y === y)) {
-        tile.classList.add("decoy");
-        tile.textContent = "👤";
-      }
-      // Then check other special tiles
-      else if (gameState.level.specialTiles.firewalls.some(t => t.x === x && t.y === y)) {
+      // Check for special tiles first
+      if (gameState.level.specialTiles.firewalls.some(t => t.x === x && t.y === y)) {
         tile.classList.add("firewall");
         tile.textContent = "🚧";
       } else if (gameState.level.specialTiles.dataNodes.some(t => t.x === x && t.y === y)) {
@@ -1154,9 +1020,6 @@ function createMap() {
           if (seeker.x === x && seeker.y === y) {
             tile.classList.add("seeker");
             tile.textContent = "🕵️"
-            if (gameState.ai.confused) {
-              tile.classList.add("confused");
-            }
           }
         });
       }
@@ -1180,7 +1043,7 @@ function resetGame() {
   gameState.session.gameActive = true;
   gameState.session.isPaused = false;
   
-  // Fixed 6x6 grid
+  // Fixed 6x6 grid - removed the increasing size logic
   gameState.level.mapSize = 6;
   
   // Generate random goal position ensuring it's at least 5 tiles away from player
@@ -1221,7 +1084,7 @@ function resetGame() {
   for (let i = 0; i < enemyCount; i++) {
     let x, y;
     let attempts = 0;
-    const maxAttempts = 100;
+    const maxAttempts = 100; // Increased from 50 to ensure placement
     
     do {
       x = Math.floor(Math.random() * gameState.level.mapSize);
@@ -1230,11 +1093,16 @@ function resetGame() {
       
       if (attempts >= maxAttempts) break;
     } while (
+      // Don't spawn on player or goal
       (x === gameState.player.position.x && y === gameState.player.position.y) ||
       (x === gameState.level.goalPosition.x && y === gameState.level.goalPosition.y) ||
+      // Don't spawn on firewalls
       gameState.level.specialTiles.firewalls.some(t => t.x === x && t.y === y) ||
+      // Don't spawn too close to player (now 4 tiles minimum)
       calculateDistance({x, y}, gameState.player.position) < 4 ||
+      // Don't spawn on existing seekers
       gameState.ai.seekers.some(s => s.x === x && s.y === y) ||
+      // Don't spawn on special tiles
       gameState.level.specialTiles.dataNodes.some(t => t.x === x && t.y === y) ||
       gameState.level.specialTiles.teleports.some(t => t.x === x && t.y === y)
     );
@@ -1350,7 +1218,7 @@ function checkCaught() {
 }
 
 // =============================================
-// Enhanced Tool Functions
+// Tool and Ability Functions
 // =============================================
 
 function useCloaking() {
@@ -1360,162 +1228,170 @@ function useCloaking() {
     return;
   }
   
+  // Check if already cloaked
   if (gameState.player.activeEffects.some(effect => effect.name === '🕶️ Cloaking')) {
     logAction("⚠️ Already cloaked!");
     playSound('click');
     return;
   }
 
+  logAction("🕶️ Cloaking activated!");
+  playSound('cloak');
+  events.emit('cloak-used');
+  
   const duration = toolStats.cloaking.duration * gameState.player.stats.cloaking;
   
   gameState.player.activeEffects.push({
     name: '🕶️ Cloaking',
     duration: duration,
-    expires: Date.now() + duration * 1000,
-    description: `Phase through enemies (${duration}s)`
+    expires: Date.now() + duration * 1000
   });
   
-  logAction(`🕶️ Cloaking activated for ${duration} seconds!`);
-  playSound('cloak');
   startCooldown('cloaking', toolStats.cloaking.cooldown);
   
-  // Visual effect
+  // Add visual effect
   const playerTile = document.querySelector(".hider");
-  if (playerTile) playerTile.classList.add("cloaking-active");
-  
-  // Remove effect after duration
+  if (playerTile) {
+    playerTile.classList.add("cloaking-active");
+    setTimeout(() => {
+      playerTile.classList.remove("cloaking-active");
+    }, duration * 1000);
+  }
+
   setTimeout(() => {
     gameState.player.activeEffects = gameState.player.activeEffects.filter(
       effect => effect.name !== '🕶️ Cloaking'
     );
-    if (playerTile) playerTile.classList.remove("cloaking-active");
     logAction("🕶️ Cloaking expired.");
   }, duration * 1000);
 }
 
 function plantDecoyData() {
-  if (!gameState.session.gameActive || gameState.session.isPaused) {
+  if (gameState.player.activeEffects.some(effect => effect.name === '📡 Decoy') || 
+      !gameState.session.gameActive || gameState.session.isPaused) {
     logAction("🛑 Decoy is on cooldown.");
     playSound('click');
     return;
   }
-
-  // Clear existing decoys
-  gameState.level.decoys = [];
   
-  // Create decoys based on level
-  const decoyCount = toolStats.decoy.decoyCount + Math.floor(toolStats.decoy.level / 2);
-  const validTiles = [];
-  
-  // Find all valid tiles for decoys
-  for (let y = 0; y < gameState.level.mapSize; y++) {
-    for (let x = 0; x < gameState.level.mapSize; x++) {
-      if (!(x === gameState.player.position.x && y === gameState.player.position.y) &&
-          !gameState.level.specialTiles.firewalls.some(t => t.x === x && t.y === y) &&
-          !gameState.level.specialTiles.dataNodes.some(t => t.x === x && t.y === y) &&
-          !gameState.level.specialTiles.teleports.some(t => t.x === x && t.y === y) &&
-          !gameState.ai.seekers.some(s => s.x === x && s.y === y)) {
-        validTiles.push({x, y});
-      }
-    }
-  }
-
-  // Place decoys randomly
-  for (let i = 0; i < Math.min(decoyCount, validTiles.length); i++) {
-    const randomIndex = Math.floor(Math.random() * validTiles.length);
-    gameState.level.decoys.push(validTiles[randomIndex]);
-    validTiles.splice(randomIndex, 1);
-  }
-
-  logAction(`👤 Planted ${gameState.level.decoys.length} decoys!`);
+  logAction("📡 Decoy planted! Confusing AI.");
   playSound('decoy');
+  events.emit('decoy-used');
   
   const duration = toolStats.decoy.duration;
   
   gameState.player.activeEffects.push({
     name: '📡 Decoy',
     duration: duration,
-    expires: Date.now() + duration * 1000,
-    description: `${gameState.level.decoys.length} fake hiders`
+    expires: Date.now() + duration * 1000
   });
   
-  gameState.ai.confused = true;
   startCooldown('decoy', toolStats.decoy.cooldown);
+
+  // Move all seekers to random positions
+  gameState.ai.seekers = gameState.ai.seekers.map(() => ({
+    x: Math.floor(Math.random() * gameState.level.mapSize),
+    y: Math.floor(Math.random() * gameState.level.mapSize)
+  }));
+  
   createMap();
 
-  // Remove decoys after duration
   setTimeout(() => {
     gameState.player.activeEffects = gameState.player.activeEffects.filter(
       effect => effect.name !== '📡 Decoy'
     );
-    gameState.level.decoys = [];
-    gameState.ai.confused = false;
-    logAction("👤 Decoys expired.");
-    createMap();
+    logAction("📡 Decoy expired.");
   }, duration * 1000);
 }
 
+function useUSBAdapter() {
+  if (gameState.session.isPaused) return;
+  logAction("🔌 Bootable USB used! Goal revealed.");
+  playSound('powerup', 0.5);
+  const goalTile = document.querySelector(".goal");
+  if (goalTile) {
+    goalTile.classList.add("goal-revealed");
+    createParticles(gameState.level.goalPosition, 15, 'var(--accent-blue)');
+  }
+  setTimeout(() => {
+    const goalTile = document.querySelector(".goal");
+    if (goalTile) goalTile.classList.remove("goal-revealed");
+  }, 3000);
+}
+
 function useTorTrail() {
-  if (!gameState.session.gameActive || gameState.session.isPaused) return;
-  
+  if (gameState.session.isPaused) return;
   if (gameState.player.activeEffects.some(effect => effect.name === '🌀 Tor Trail')) {
-    logAction("⚠️ Tor Trail is already active!");
+    logAction("⚠️ Tor Trail is already active.");
     playSound('click');
     return;
   }
 
+  logAction("🌀 Tor Trail active! Diagonal move unlocked.");
+  playSound('powerup', 0.6);
+  
   const duration = toolStats.torTrail.duration;
   
   gameState.player.activeEffects.push({
     name: '🌀 Tor Trail',
     duration: duration,
-    expires: Date.now() + duration * 1000,
-    description: `Diagonal moves (${duration}s)`
+    expires: Date.now() + duration * 1000
   });
   
-  logAction(`🌀 Tor Trail activated for ${duration} seconds!`);
-  playSound('powerup');
   startCooldown('torTrail', toolStats.torTrail.cooldown);
 
-  // Visual effect
+  // Add visual effect to player
   const playerTile = document.querySelector(".hider");
-  if (playerTile) playerTile.classList.add("tor-trail-active");
-  
-  // Remove effect after duration
+  if (playerTile) {
+    playerTile.classList.add("tor-trail-active");
+    setTimeout(() => {
+      playerTile.classList.remove("tor-trail-active");
+    }, duration * 1000);
+  }
+
   setTimeout(() => {
     gameState.player.activeEffects = gameState.player.activeEffects.filter(
       effect => effect.name !== '🌀 Tor Trail'
     );
-    if (playerTile) playerTile.classList.remove("tor-trail-active");
     logAction("🌀 Tor Trail expired.");
   }, duration * 1000);
 }
 
-function useVPN() {
-  if (!gameState.session.gameActive || gameState.session.isPaused) return;
+function useCCCleanser() {
+  if (gameState.session.isPaused) return;
+  logAction("🧯 CC Cleaner used! Seekers confused.");
+  playSound('powerup', 0.8);
+  const newX = Math.floor(Math.random() * gameState.level.mapSize);
+  const newY = Math.floor(Math.random() * gameState.level.mapSize);
+  gameState.ai.seekers = [{ x: newX, y: newY }];
   
+  // Add visual effect
+  createParticles({x: newX, y: newY}, 20, 'var(--accent-purple)');
+  
+  createMap();
+}
+
+function useVPN() {
+  if (gameState.session.isPaused) return;
   if (gameState.player.activeEffects.some(effect => effect.name === '🛡️ VPN')) {
-    logAction("⚠️ VPN is already active!");
+    logAction("⚠️ VPN is on cooldown.");
     playSound('click');
     return;
   }
 
-  const jumpDistance = toolStats.vpn.jumpDistance + Math.floor(toolStats.vpn.level / 2);
+  logAction("🛡️ VPN activated! Short-term invisibility.");
+  playSound('powerup', 0.4);
+  
   const duration = toolStats.vpn.duration;
   
   gameState.player.activeEffects.push({
     name: '🛡️ VPN',
     duration: duration,
-    expires: Date.now() + duration * 1000,
-    jumpDistance: jumpDistance,
-    description: `Jump ${jumpDistance} tiles (${duration}s)`
+    expires: Date.now() + duration * 1000
   });
   
-  logAction(`🛡️ VPN activated! Can jump ${jumpDistance} tiles for ${duration}s`);
-  playSound('powerup');
   startCooldown('vpn', toolStats.vpn.cooldown);
 
-  // Remove effect after duration
   setTimeout(() => {
     gameState.player.activeEffects = gameState.player.activeEffects.filter(
       effect => effect.name !== '🛡️ VPN'
@@ -1524,72 +1400,8 @@ function useVPN() {
   }, duration * 1000);
 }
 
-function useUSBAdapter() {
-  if (!gameState.session.gameActive || gameState.session.isPaused) return;
-
-  const distance = toolStats.usb.teleportDistance + Math.floor(toolStats.usb.level / 2);
-  const validTiles = [];
-  
-  // Find all valid teleport locations
-  for (let y = 0; y < gameState.level.mapSize; y++) {
-    for (let x = 0; x < gameState.level.mapSize; x++) {
-      const tileDistance = calculateDistance(gameState.player.position, {x, y});
-      if (tileDistance <= distance && 
-          !(x === gameState.player.position.x && y === gameState.player.position.y) &&
-          !gameState.level.specialTiles.firewalls.some(t => t.x === x && t.y === y) &&
-          !gameState.ai.seekers.some(s => s.x === x && s.y === y)) {
-        validTiles.push({x, y});
-      }
-    }
-  }
-
-  if (validTiles.length > 0) {
-    const destination = validTiles[Math.floor(Math.random() * validTiles.length)];
-    
-    // Teleport effects
-    createParticles(gameState.player.position, 20, 'var(--accent-blue)');
-    setTimeout(() => {
-      gameState.player.position = destination;
-      createParticles(destination, 20, 'var(--primary)');
-      createMap();
-    }, 200);
-    
-    logAction(`🔌 Teleported ${distance} tiles away!`);
-    playSound('teleport');
-    startCooldown('usb', toolStats.usb.cooldown);
-  } else {
-    logAction("⚠️ No safe teleport location found!");
-    playSound('click');
-  }
-}
-
-function useCCCleanser() {
-  if (!gameState.session.gameActive || gameState.session.isPaused) return;
-
-  // Teleport all seekers to random positions
-  gameState.ai.seekers = gameState.ai.seekers.map(() => {
-    let x, y;
-    do {
-      x = Math.floor(Math.random() * gameState.level.mapSize);
-      y = Math.floor(Math.random() * gameState.level.mapSize);
-    } while (gameState.level.specialTiles.firewalls.some(t => t.x === x && t.y === y));
-    
-    return { x, y };
-  });
-
-  logAction("🧯 CC Cleaner teleported all enemies!");
-  playSound('powerup');
-  startCooldown('ccCleaner', toolStats.ccCleaner.cooldown);
-  createMap();
-}
-
-// =============================================
-// Privacy Tools Market Functions
-// =============================================
-
 function openPrivacyToolsMarket() {
-  if (!gameState.session.gameActive || gameState.session.isPaused) return;
-  
+  if (gameState.session.isPaused) return;
   logAction("🛒 Privacy Tools Market opened.");
   playSound('powerup', 0.3);
   
@@ -1606,7 +1418,6 @@ function openPrivacyToolsMarket() {
       div.innerHTML = `
         <strong>${tool.icon} ${tool.name} (Lvl ${tool.level})</strong>
         <span>${tool.desc}</span>
-        <div class="upgrade-power">Current: ${tool.power}</div>
         <button class="cyber-button" onclick="upgradeTool('${tool.name}')">
           <span class="glow-text">Upgrade</span>
           <span>${getUpgradeCost(tool)} CREDITS</span>
@@ -1617,7 +1428,6 @@ function openPrivacyToolsMarket() {
       div.innerHTML = `
         <strong>${tool.icon} ${tool.name}</strong>
         <span>${tool.desc}</span>
-        <div class="upgrade-power">${tool.power}</div>
         <button class="cyber-button" onclick="buyTool('${tool.name}')">
           <span class="glow-text">Purchase</span>
           <span>${tool.costBase} CREDITS</span>
@@ -1644,34 +1454,23 @@ function buyTool(toolName) {
     tool.owned = true;
     gameState.player.ownedTools[toolName.toLowerCase()] = true;
     
-    // Add to inventory with power description
-    addToInventory(
-      tool.name, 
-      tool.desc, 
-      getToolUseFunction(toolName),
-      tool.icon, 
-      tool.power
-    );
+    // Add to inventory
+    addToInventory(tool.name, tool.desc, () => {
+      if (toolName === 'Cloaking') useCloaking();
+      else if (toolName === 'Decoy') plantDecoyData();
+      else if (toolName === 'Tor Trail') useTorTrail();
+      else if (toolName === 'VPN') useVPN();
+      else if (toolName === 'CC Cleaner') useCCCleanser();
+      else if (toolName === 'Bootable USB') useUSBAdapter();
+    }, tool.icon);
     
     updateCoinsDisplay(gameState.player.coins);
     logAction(`🛍️ Purchased ${tool.name}!`);
     playSound('coin');
-    openPrivacyToolsMarket();
+    openPrivacyToolsMarket(); // Refresh modal
   } else {
     logAction(`🪙 Need ${tool.costBase} coins to buy ${tool.name}.`);
     playSound('click');
-  }
-}
-
-function getToolUseFunction(toolName) {
-  switch(toolName.toLowerCase()) {
-    case 'cloaking': return useCloaking;
-    case 'decoy': return plantDecoyData;
-    case 'tor trail': return useTorTrail;
-    case 'vpn': return useVPN;
-    case 'cc cleaner': return useCCCleanser;
-    case 'bootable usb': return useUSBAdapter;
-    default: return () => {};
   }
 }
 
@@ -1682,37 +1481,12 @@ function upgradeTool(toolName) {
   if (gameState.player.coins >= cost) {
     gameState.player.coins -= cost;
     tool.level++;
-    
-    // Apply upgrades based on tool type
-    if (toolName === 'Cloaking') {
-      tool.duration += 2;
-      tool.power = `Phase through enemies (${tool.duration}s)`;
-    } 
-    else if (toolName === 'Decoy') {
-      tool.duration += 2;
-      tool.decoyCount += 1;
-      tool.power = `Creates ${tool.decoyCount} fake hiders`;
-    }
-    else if (toolName === 'VPN') {
-      tool.jumpDistance += 1;
-      tool.power = `Jump ${tool.jumpDistance} tiles`;
-    }
-    else if (toolName === 'Bootable USB') {
-      tool.teleportDistance += 1;
-      tool.power = `Teleport ${tool.teleportDistance} tiles`;
-    }
-    else if (toolName === 'Tor Trail') {
-      tool.duration += 2;
-      tool.power = `Diagonal moves (${tool.duration}s)`;
-    }
-    
+    if (tool.duration) tool.duration += 2;
+    if (tool.moves) tool.moves += 1;
     updateCoinsDisplay(gameState.player.coins);
     logAction(`📈 Upgraded ${tool.name} to Lvl ${tool.level}`);
     playSound('powerup');
-    
-    // Refresh inventory to show updated powers
-    refreshInventory();
-    openPrivacyToolsMarket();
+    openPrivacyToolsMarket(); // Refresh modal
   } else {
     logAction(`🪙 Need ${cost} coins to upgrade ${tool.name}.`);
     playSound('click');
@@ -1724,71 +1498,26 @@ function getUpgradeCost(tool) {
 }
 
 // =============================================
-// Enhanced Inventory System
+// Inventory Functions
 // =============================================
 
 function initInventory() {
   const inv = document.getElementById("inventory");
-  const desktopInv = document.getElementById("desktop-inventory");
-  if (inv) inv.innerHTML = '';
-  if (desktopInv) desktopInv.innerHTML = '';
+  inv.innerHTML = '';
 }
 
-function addToInventory(itemName, description, useFunction, icon = "❓", power = "") {
-  // Create inventory item element
-  const itemHTML = `
+function addToInventory(itemName, description, useFunction, icon = "❓") {
+  const inv = document.getElementById("inventory");
+  const item = document.createElement("div");
+  item.className = "inventory-item";
+  item.innerHTML = `
     <div class="inventory-icon">${icon}</div>
-    <div class="inventory-name">${itemName}</div>
-    <div class="inventory-power">${power}</div>
+    <div>${itemName}</div>
     <span class="tooltip-inv">${description}</span>
   `;
-
-  // Add to mobile inventory
-  const inv = document.getElementById("inventory");
-  if (inv) {
-    const item = document.createElement("div");
-    item.className = "inventory-item";
-    item.innerHTML = itemHTML;
-    item.onclick = useFunction;
-    inv.appendChild(item);
-  }
-
-  // Add to desktop inventory
-  const desktopInv = document.getElementById("desktop-inventory");
-  if (desktopInv) {
-    const item = document.createElement("div");
-    item.className = "inventory-item";
-    item.innerHTML = itemHTML;
-    item.onclick = useFunction;
-    desktopInv.appendChild(item);
-  }
-
-  // Add to game state
-  gameState.player.inventory.push({ 
-    name: itemName, 
-    description, 
-    useFunction, 
-    icon,
-    power 
-  });
-}
-
-function refreshInventory() {
-  initInventory();
-  Object.entries(gameState.player.ownedTools).forEach(([name, owned]) => {
-    if (owned) {
-      const tool = Object.values(toolStats).find(t => t.name.toLowerCase() === name);
-      if (tool) {
-        addToInventory(
-          tool.name,
-          tool.desc,
-          getToolUseFunction(tool.name),
-          tool.icon,
-          tool.power
-        );
-      }
-    }
-  });
+  item.onclick = useFunction;
+  inv.appendChild(item);
+  gameState.player.inventory.push({ name: itemName, description, useFunction, icon });
 }
 
 // =============================================
@@ -1843,8 +1572,3 @@ function closeModals() {
   document.getElementById("aboutModal").style.display = "none";
   playSound('click');
 }
-
-// Initialize the game when everything is loaded
-document.addEventListener('DOMContentLoaded', () => {
-  initGame();
-});
