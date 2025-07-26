@@ -430,6 +430,7 @@ function newGame() {
   
   // Clear inventory
   document.getElementById("inventory").innerHTML = '';
+  document.getElementById("desktop-inventory").innerHTML = '';
   
   // Close modals and start fresh
   closeModals();
@@ -1503,10 +1504,13 @@ function getUpgradeCost(tool) {
 
 function initInventory() {
   const inv = document.getElementById("inventory");
+  const desktopInv = document.getElementById("desktop-inventory");
   inv.innerHTML = '';
+  desktopInv.innerHTML = '';
 }
 
 function addToInventory(itemName, description, useFunction, icon = "❓") {
+  // Add to mobile inventory
   const inv = document.getElementById("inventory");
   const item = document.createElement("div");
   item.className = "inventory-item";
@@ -1517,6 +1521,19 @@ function addToInventory(itemName, description, useFunction, icon = "❓") {
   `;
   item.onclick = useFunction;
   inv.appendChild(item);
+  
+  // Add to desktop inventory
+  const desktopInv = document.getElementById("desktop-inventory");
+  const desktopItem = document.createElement("div");
+  desktopItem.className = "inventory-item";
+  desktopItem.innerHTML = `
+    <div class="inventory-icon">${icon}</div>
+    <div>${itemName}</div>
+    <span class="tooltip-inv">${description}</span>
+  `;
+  desktopItem.onclick = useFunction;
+  desktopInv.appendChild(desktopItem);
+  
   gameState.player.inventory.push({ name: itemName, description, useFunction, icon });
 }
 
